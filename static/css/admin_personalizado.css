@@ -1,0 +1,95 @@
+/* admin_personalizado.css */
+
+.login-logo img {
+    max-width: 250px !important; 
+    height: auto !important;
+    margin-bottom: 20px;
+}
+
+
+.login-logo {
+    text-align: center;
+    font-size: 1.5rem; 
+}
+
+/* 1. IMPORTAR FUENTE MODERNA (Poppins) */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+
+/* Aplicar la fuente a todo el sitio */
+body, h1, h2, h3, h4, h5, h6, .sidebar, .brand-link {
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 12px !important;
+}
+
+/* 2. BOTONES REDONDEADOS */
+.btn {
+    border-radius: 50px !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease; 
+}
+
+/* Efecto al pasar el mouse por los botones */
+.btn:hover {
+    transform: translateY(-2px); 
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* 3. TARJETAS */
+.card {
+    border-radius: 15px !important;
+    border: none !important;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.05) !important; 
+    margin-bottom: 25px !important; 
+}
+
+/* Cabecera de las tarjetas */
+.card-header {
+    background-color: white !important;
+    border-bottom: 1px solid #f0f0f0 !important;
+    border-radius: 15px 15px 0 0 !important;
+    padding: 20px !important;
+}
+
+/* 4. TABLAS */
+.table td, .table th {
+    padding: 15px 15px !important;
+    vertical-align: middle !important; 
+    border-top: 1px solid #f4f6f9 !important;
+}
+
+/* Fila de cabecera de la tabla */
+.table thead th {
+    border-bottom: 2px solid #eaeaea !important;
+    font-weight: 600 !important;
+    color: #555;
+    text-transform: uppercase;
+    font-size: 11px;
+}
+
+/* 5. MENÚ LATERAL (Sidebar) */
+.main-sidebar {
+    box-shadow: 4px 0 10px rgba(0,0,0,0.05) !important;
+    border-right: 1px solid rgba(0,0,0,0.05);
+}
+
+/* Separación en los items del menú para que no se vean apretados */
+.nav-sidebar .nav-item {
+    margin-bottom: 5px !important;
+}
+
+.nav-sidebar .nav-link {
+    border-radius: 10px !important; /* Redondeado en la selección del menú */
+    padding: 10px 15px !important;
+}
+
+/* 6. LOGO DEL LOGIN (El ajuste que hicimos antes, mantenlo) */
+.login-logo img {
+    max-width: 250px !important;
+    height: auto !important;
+    margin-bottom: 20px;
+}

@@ -1,0 +1,139 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-9 col-lg-7">
+    
+    <div class="bg-white rounded-4 shadow-sm p-4 p-md-5 animate-in mb-4">
+
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <span class="icon-pill"><i class="bi bi-person-circle"></i></span>
+          <div>
+            <h3 class="mb-0">Mi perfil</h3>
+            <div class="text-muted small">Tus datos personales.</div>
+          </div>
+        </div>
+
+        <a class="btn btn-outline-dark btn-pill" href="{% url 'accounts:logout' %}">
+          <i class="bi bi-box-arrow-right me-1"></i> Salir
+        </a>
+      </div>
+
+      <hr class="my-4">
+
+      <div class="bg-light border rounded-4 p-3 mb-4">
+        <div class="row g-3 small">
+          
+          <div class="col-12 col-md-6">
+            <div class="text-muted text-uppercase" style="font-size: 0.75rem;">Nombres</div>
+            <div class="fw-semibold text-dark fs-6">
+                {{ request.user.first_name|default:"-" }}
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <div class="text-muted text-uppercase" style="font-size: 0.75rem;">Apellidos</div>
+            <div class="fw-semibold text-dark fs-6">
+                {{ request.user.last_name|default:"-" }}
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <div class="text-muted text-uppercase" style="font-size: 0.75rem;">Correo</div>
+            <div class="fw-semibold text-dark">
+                {{ request.user.email }}
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <div class="text-muted text-uppercase" style="font-size: 0.75rem;">Usuario</div>
+            <div class="fw-semibold text-dark">
+                {{ request.user.username }}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <form method="post" class="needs-validation" novalidate>
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger rounded-3">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
+
+        <div class="mb-3">
+          <label class="form-label">{{ form.phone.label }}</label>
+          {{ form.phone }}
+          {% if form.phone.errors %}
+            <div class="invalid-feedback d-block">{{ form.phone.errors|striptags }}</div>
+          {% else %}
+            <div class="form-text">Ej: 0999999999</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">{{ form.address.label }}</label>
+          {{ form.address }}
+          {% if form.address.errors %}
+            <div class="invalid-feedback d-block">{{ form.address.errors|striptags }}</div>
+          {% else %}
+            <div class="form-text">Dirección para coordinar envíos.</div>
+          {% endif %}
+        </div>
+
+        <button class="btn btn-dark btn-pill w-100 py-2" type="submit">
+          Guardar cambios <i class="bi bi-save ms-1"></i>
+        </button>
+      </form>
+    </div>
+
+    <div class="bg-white rounded-4 shadow-sm p-4 border border-danger border-opacity-25">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+           <h6 class="text-danger fw-bold mb-1">Eliminación de cuenta</h6>
+           <p class="text-muted small mb-0">Esta acción no se puede deshacer.</p>
+        </div>
+        <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+          Eliminar cuenta
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header border-bottom-0">
+        <h5 class="modal-title fw-bold text-danger">¿Estás seguro?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body text-center py-3">
+        <p class="mb-0 text-muted">
+            Se eliminará tu cuenta, historial de pedidos y datos guardados de forma permanente.
+        </p>
+      </div>
+      <div class="modal-footer border-top-0 justify-content-center pb-4">
+        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+        
+        <form action="{% url 'accounts:delete_account' %}" method="post">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger rounded-pill px-4">
+            Sí, eliminar
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll("input, textarea, select").forEach(el => {
+    if (!el.classList.contains("form-check-input")) el.classList.add("form-control");
+  });
+</script>
+{% endblock %}

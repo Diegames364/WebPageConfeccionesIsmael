@@ -1,0 +1,163 @@
+/* ================= HERO RECTANGULAR ================= */
+.hero-rect {
+  background: #ffffff;
+  border-radius: 26px;
+  overflow: hidden;
+  box-shadow: 0 18px 40px rgba(0,0,0,.12);
+  min-height: 420px;
+  display: flex;
+}
+
+/* ROW ocupa todo */
+.hero-rect > .row {
+  flex: 1;
+}
+
+/* LEFT */
+.hero-left {
+  padding: 38px;
+  animation: fadeUp .6s ease-out both;
+}
+
+.hero-title {
+  font-size: clamp(2rem, 3.8vw, 2.8rem);
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+.hero-desc {
+  color: #555;
+  max-width: 46ch;
+}
+
+.hero-right {
+  position: relative;
+  background: linear-gradient(
+    to bottom left,
+    rgba(120,140,255,.45),
+    rgba(180,120,255,.35)
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===== LOGO FRAME ===== */
+.logo-frame {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+
+.hero-logo {
+  max-width: 80%;
+  max-height: 80%;
+  object-fit: contain;
+  border-radius: 22px;
+  filter: drop-shadow(0 14px 28px rgba(0,0,0,.30));
+}
+
+.hero-right::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at center,
+    rgba(255,255,255,.35),
+    rgba(255,255,255,0) 70%
+  );
+}
+
+/* FLOAT LOGO (solo desktop) */
+.hero-logo {
+  max-width: 85%;
+  max-height: 260px;
+  z-index: 1;
+  filter: drop-shadow(0 14px 28px rgba(0,0,0,.30));
+}
+
+/* ================= FEATURED PRODUCTS ================= */
+.featured-title {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+/* PRODUCT CARD */
+.product-mini {
+  border-radius: 18px;
+  border: 1px solid rgba(0,0,0,.08);
+  transition: box-shadow .2s ease;
+  position: relative;
+}
+
+.product-mini:hover {
+  box-shadow: 0 14px 30px rgba(0,0,0,.15);
+}
+
+.product-mini img {
+  height: 160px;
+  object-fit: cover;
+}
+
+/* BADGE MÁS VENDIDO */
+.badge-hot {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #ff5722;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 999px;
+  box-shadow: 0 6px 14px rgba(0,0,0,.25);
+}
+
+/* BUTTONS */
+.btn {
+  transition: background-color .2s ease, color .2s ease, box-shadow .2s ease;
+}
+
+.btn-light.fw-semibold {
+  color: #111;
+}
+
+/* ================= ANIMATIONS ================= */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes floatSlow {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+  100% { transform: translateY(0); }
+}
+
+/* SOLO DESKTOP */
+@media (min-width: 992px) {
+  .hero-logo {
+    animation: floatSlow 5s ease-in-out infinite;
+  }
+  .product-mini {
+    animation: fadeUp .5s ease-out both;
+  }
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 991px) {
+  .hero-logo {
+    object-fit: contain;
+    padding: 12px;
+    background: rgba(255,255,255,0.6);
+  }
+}

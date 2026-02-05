@@ -1,0 +1,42 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ SITE_NAME }}</title>
+  <link rel="icon" type="image/png" href="/media/branding/logo.png">
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="{% static 'css/theme.css' %}">
+</head>
+
+<body>
+
+  {% include "base/navbar.html" %}
+  {% include "base/messages.html" %}
+
+  <main class="container py-4">
+    {% block content %}{% endblock %}
+  </main>
+
+  <div class="container pb-4">
+    {% include "base/footer.html" %}
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Variables globales Django -> JS -->
+  <script>
+    window.CART_SUMMARY_URL = "{% url 'cart:summary_api' %}";
+  </script>
+
+  <!-- Main JS -->
+  <script src="{% static 'js/main.js' %}"></script>
+
+</body>
+</html>

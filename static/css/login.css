@@ -1,0 +1,63 @@
+/* =========================================
+   Estilos para Login / Registro
+   ========================================= */
+
+/* Animación de entrada suave */
+.animate-in {
+    animation: fadeInUp 0.5s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Tarjeta de Login */
+.login-card {
+    border: 1px solid rgba(0,0,0,0.05);
+    background-color: #fff;
+    transition: box-shadow 0.3s ease;
+}
+
+.login-card:hover {
+    box-shadow: 0 1rem 3rem rgba(0,0,0,0.1) !important;
+}
+
+/* Icono circular decorativo */
+.icon-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background-color: #f8f9fa;
+    color: #212529;
+    font-size: 1.2rem;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+/* Ajustes para inputs */
+.form-control:focus {
+    border-color: #212529;
+    box-shadow: 0 0 0 0.25rem rgba(33, 37, 41, 0.1);
+}
+
+/* Link de olvidar contraseña */
+.forgot-link {
+    font-size: 0.9rem;
+    text-decoration: none;
+    color: #6c757d;
+    transition: color 0.2s;
+}
+
+.forgot-link:hover {
+    color: #000;
+    text-decoration: underline;
+}

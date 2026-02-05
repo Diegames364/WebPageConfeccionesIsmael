@@ -1,0 +1,130 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrahead %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{% static 'js/admin_dashboard.js' %}" defer></script>
+    
+    <style>
+        .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 20px;}
+        .filter-box { background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #ddd; display: flex; gap: 10px; align-items: flex-end; }
+        .btn-print { background-color: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-filter { background-color: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
+        .table-report { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        .table-report th, .table-report td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        .table-report th { background-color: #f1f1f1; }
+        @media print {
+            .navbar, .main-sidebar, .main-header, .breadcrumbs, .filter-box, .object-tools, footer, .btn-print {
+                display: none !important;
+            }
+            .content-wrapper, .content, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+                width: 100% !important;
+            }
+            .charts-container { page-break-inside: avoid; }
+            canvas { max-height: 300px !important; }
+            .print-only-header { display: block !important; text-align: center; margin-bottom: 20px; }
+            .print-only-header h2 { margin: 0; color: #333; }
+            .print-only-header p { color: #666; }
+        }
+        .print-only-header { display: none; } 
+    </style>
+{% endblock %}
+
+{% block content %}
+<div style="padding: 20px; max-width: 1200px; margin: 0 auto;">
+    
+    <div class="print-only-header">
+        <h2>Reporte de Gestión - Confecciones Ismael</h2>
+        <p>Generado el: {% now "d/m/Y H:i" %} | Rango: {{ filtros.start }} al {{ filtros.end }}</p>
+        <hr>
+    </div>
+
+    <div class="dashboard-header">
+        <div>
+            <h1 style="font-weight: 800; color: #333; margin: 0;">📊 Tablero Gerencial</h1>
+            <p style="color: #777; margin: 5px 0 0 0;">Análisis de ventas del {{ filtros.start }} al {{ filtros.end }}</p>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <form method="GET" class="filter-box">
+                <div>
+                    <label style="font-size: 12px; font-weight: bold; display: block;">Desde:</label>
+                    <input type="date" name="start_date" value="{{ filtros.start }}" style="padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: bold; display: block;">Hasta:</label>
+                    <input type="date" name="end_date" value="{{ filtros.end }}" style="padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <button type="submit" class="btn-filter">🔍 Filtrar</button>
+            </form>
+
+            <button onclick="window.print()" class="btn-print">🖨️ Imprimir Reporte</button>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 20px; margin-bottom: 40px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 200px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 6px solid #28a745;">
+            <h3 style="margin: 0; color: #888; font-size: 12px;">INGRESOS (PERIODO)</h3>
+            <p style="margin: 5px 0 0 0; font-size: 28px; font-weight: 800; color: #28a745;">${{ summary.ingresos|floatformat:2 }}</p>
+        </div>
+        <div style="flex: 1; min-width: 200px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 6px solid #17a2b8;">
+            <h3 style="margin: 0; color: #888; font-size: 12px;">VENTAS CERRADAS</h3>
+            <p style="margin: 5px 0 0 0; font-size: 28px; font-weight: 800; color: #17a2b8;">{{ summary.pedidos }}</p>
+        </div>
+        <div style="flex: 1; min-width: 200px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 6px solid #ffc107;">
+            <h3 style="margin: 0; color: #888; font-size: 12px;">TICKET PROMEDIO</h3>
+            <p style="margin: 5px 0 0 0; font-size: 28px; font-weight: 800; color: #ffc107;">${{ summary.promedio|floatformat:2 }}</p>
+        </div>
+    </div>
+
+    <div class="charts-container" style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 40px;">
+        <div style="flex: 2; min-width: 400px; background: white; padding: 20px; border-radius: 12px; border: 1px solid #eee;">
+            <h4 style="margin-top: 0;">🏆 Top Productos (Periodo Seleccionado)</h4>
+            <div style="height: 300px; position: relative;">
+                <canvas id="chartProductos"></canvas>
+            </div>
+        </div>
+        <div style="flex: 1; min-width: 300px; background: white; padding: 20px; border-radius: 12px; border: 1px solid #eee;">
+            <h4 style="margin-top: 0; text-align: center;">📦 Estado de Pedidos</h4>
+            <div style="height: 250px; position: relative;">
+                <canvas id="chartEstados"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #eee;">
+        <h4 style="margin-top: 0;">📝 Últimas Transacciones del Periodo</h4>
+        <table class="table-report">
+            <thead>
+                <tr>
+                    <th># Pedido</th>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>Estado</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pedido in ultimos_pedidos %}
+                <tr>
+                    <td>#{{ pedido.id }}</td>
+                    <td>{{ pedido.created_at|date:"d/m/Y H:i" }}</td>
+                    <td>{{ pedido.customer_name }}</td>
+                    <td>{{ pedido.get_status_display }}</td>
+                    <td>${{ pedido.total }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center; color: #999;">No hay ventas en este rango de fechas.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{{ chart_data|json_script:"chart-data-source" }}
+{% endblock %}

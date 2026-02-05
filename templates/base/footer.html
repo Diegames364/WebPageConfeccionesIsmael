@@ -1,0 +1,30 @@
+<footer class="bg-white footer-card shadow-sm p-4">
+  <div class="row gy-3">
+    <div class="col-md-6">
+      <strong>{{ SITE_NAME }}</strong>
+      <div class="text-muted small mt-2">© {% now "Y" %} {{ SITE_NAME }}</div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="fw-semibold mb-2">Ayuda</div>
+      <div class="d-flex flex-column gap-1">
+        <a class="link-dark text-decoration-none" href="{% url 'core:ayuda' %}">Centro de Ayuda</a>
+        <a class="link-dark text-decoration-none" href="{% url 'core:faq' %}">FAQ</a>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="fw-semibold mb-2">Social</div>
+      <div class="d-flex flex-column gap-1">
+        <a class="link-dark text-decoration-none" 
+           href="https://www.facebook.com/share/1G5WKqYcme/" target="_blank" rel="noopener noreferrer">
+          Facebook
+        </a>
+        <a class="link-dark text-decoration-none"
+           href="https://wa.me/{{ WHATSAPP_NUMBER }}?text=Hola%2C%20quisiera%20informaci%C3%B3n%20por%20favor.">
+          WhatsApp
+        </a>
+      </div>
+    </div>
+  </div>
+</footer>

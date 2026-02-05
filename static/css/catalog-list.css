@@ -1,0 +1,93 @@
+/* =========================================
+   Estilos del Catálogo (Listado)
+   ========================================= */
+
+.catalog-hero {
+  color: #fff;
+  padding: 18px 18px;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+}
+
+.filter-card {
+  border-radius: 18px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.filter-sticky {
+  position: sticky;
+  top: 92px;
+  z-index: 10;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  font-size: 13px;
+}
+
+.product-card {
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  height: 100%; 
+  display: flex;
+  flex-direction: column;
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+}
+
+.product-img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  background-color: #f8f9fa;
+}
+
+/* =========================================
+   NUEVO: Títulos de Categoría
+   ========================================= */
+.category-section-title {
+  color: #ffffff;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+  font-size: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 0.5rem;
+}
+
+/* =========================================
+   FIX RESPONSIVE: Buscador en Móvil
+   ========================================= */
+.search-input {
+  min-width: 260px;
+}
+
+@media (max-width: 768px) {
+  .catalog-hero form {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  
+  .search-input {
+    min-width: 0 !important;
+    width: 100% !important;
+    margin-bottom: 0.5rem;
+  }
+  
+  .catalog-hero button {
+    width: 100%;
+  }
+}

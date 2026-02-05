@@ -1,0 +1,89 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="bg-white rounded-4 shadow-sm p-4">
+  <div class="d-flex justify-content-between align-items-start">
+    <div>
+      <h2 class="mb-1">Recibo interno</h2>
+      <div class="text-muted">Pedido #{{ order.id }} — {{ order.created_at|date:"d/m/Y H:i" }}</div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-dark btn-pill" onclick="window.print()">Imprimir</button>
+      <a class="btn btn-dark btn-pill" href="{% url 'orders:receipt_pdf' order.id %}">
+        Descargar PDF
+      </a>
+    </div>
+  </div>
+  
+  <hr>
+
+  <h5>Cliente</h5>
+  <p class="text-muted mb-2">
+    <strong>Nombre:</strong> {{ order.customer_name|default:"No especificado" }}<br>
+    <strong>Teléfono:</strong> {{ order.customer_phone|default:"No especificado" }}<br>
+    <strong>Email:</strong> {{ order.customer_email|default:"No especificado" }}<br>
+    <strong>Dirección:</strong> {{ order.customer_address|default:"No especificado" }}
+  </p>
+
+  <h5>Entrega</h5>
+  <p class="text-muted">
+    {% if order.is_pickup %}
+      Retiro en tienda
+    {% else %}
+      Envío a domicilio — Zona: {{ order.shipping_zone.name }} — Costo: ${{ order.shipping_cost }}
+    {% endif %}
+  </p>
+
+  <h5>Detalle del pedido</h5>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Variante</th>
+          <th class="text-end">Precio</th>
+          <th class="text-center">Cant.</th>
+          <th class="text-end">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for it in order.items.all %}
+        <tr>
+          <td>{{ it.product_name }}</td>
+          <td class="small text-muted">{{ it.variant_description }}</td>
+          <td class="text-end">${{ it.unit_price }}</td>
+          <td class="text-center">{{ it.quantity }}</td>
+          <td class="text-end fw-semibold">${{ it.line_total }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="d-flex justify-content-end mt-3">
+    <div style="min-width:260px">
+      <div class="d-flex justify-content-between">
+        <span>Subtotal</span><strong>${{ order.subtotal }}</strong>
+      </div>
+      <div class="d-flex justify-content-between">
+        <span>Envío</span><strong>${{ order.shipping_cost }}</strong>
+      </div>
+      <div class="d-flex justify-content-between mt-2">
+        <span>Total</span><strong>${{ order.total }}</strong>
+      </div>
+    </div>
+  </div>
+
+  {% if order.notes %}
+  <hr>
+  <h6>Notas</h6>
+  <p class="text-muted">{{ order.notes }}</p>
+  {% endif %}
+
+  {% if order.payment_instructions %}
+  <hr>
+  <h6>Instrucciones de pago</h6>
+  <p class="text-muted">{{ order.payment_instructions }}</p>
+  {% endif %}
+</div>
+{% endblock %}

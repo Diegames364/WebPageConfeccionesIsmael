@@ -1,0 +1,141 @@
+{% extends "base/base.html" %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="bg-white rounded-4 shadow-sm p-4 p-md-5">
+
+    <h2 class="mb-3">Preguntas Frecuentes (FAQ)</h2>
+    <p class="text-muted mb-4">
+      Aquí encontrarás respuestas a las dudas más comunes sobre nuestros productos,
+      pedidos y el uso del sitio web.
+    </p>
+
+    <div class="accordion" id="faqAccordion">
+
+      <!-- Pregunta 1 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingOne">
+          <button class="accordion-button" type="button" data-bs-toggle="collapse"
+            data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+            ¿Qué es Confecciones ISMAEL?
+          </button>
+        </h2>
+        <div id="collapseOne" class="accordion-collapse collapse show"
+          aria-labelledby="headingOne" data-bs-parent="#faqAccordion">
+          <div class="accordion-body">
+            Confecciones ISMAEL es una distribuidora y taller de confección dedicada a la
+            venta de prendas de vestir mecanica-industrial y pedidos personalizados, ofreciendo productos de
+            calidad y atención directa a nuestros clientes.
+          </div>
+        </div>
+      </div>
+
+      <!-- Pregunta 2 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingTwo">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+            data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+            ¿Cómo puedo realizar un pedido?
+          </button>
+        </h2>
+        <div id="collapseTwo" class="accordion-collapse collapse"
+          aria-labelledby="headingTwo" data-bs-parent="#faqAccordion">
+          <div class="accordion-body">
+            Puedes navegar por el catálogo, seleccionar el producto, elegir la talla o variante que necesites su
+            cantidad, y agregarlo al carrito. Luego, en el proceso de checkout,
+            completas tus datos y seleccionas el método de entrega. Realizas el pago y recibes la confirmación de tu pedido.
+            Nos contactaremos contigo para coordinar los detalles de entrega.
+          </div>
+        </div>
+      </div>
+
+      <!-- Pregunta 3 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingThree">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+            data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+            ¿Puedo hacer pedidos personalizados?
+          </button>
+        </h2>
+        <div id="collapseThree" class="accordion-collapse collapse"
+          aria-labelledby="headingThree" data-bs-parent="#faqAccordion">
+          <div class="accordion-body">
+            Sí. Puedes realizar consultas o pedidos personalizados mediante el formulario
+            de contacto o a través de WhatsApp, indicando el tipo de prenda, talla y detalles
+            específicos.
+          </div>
+        </div>
+      </div>
+
+      <!-- Pregunta 4 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingFour">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+            data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+            ¿Cómo funcionan las tallas?
+          </button>
+        </h2>
+        <div id="collapseFour" class="accordion-collapse collapse"
+          aria-labelledby="headingFour" data-bs-parent="#faqAccordion">
+          <div class="accordion-body">
+            Cada producto incluye información sobre las tallas disponibles.
+            Te recomendamos revisar la descripción del producto antes de realizar tu pedido
+            para asegurar un ajuste adecuado.
+          </div>
+        </div>
+      </div>
+
+      <!-- Pregunta 5 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingFive">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+            data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
+            ¿Qué métodos de entrega están disponibles?
+          </button>
+        </h2>
+        <div id="collapseFive" class="accordion-collapse collapse"
+          aria-labelledby="headingFive" data-bs-parent="#faqAccordion">
+          <div class="accordion-body">
+            Puedes elegir entre retiro en el local o envío a domicilio,
+            dependiendo de tu ubicación y del método seleccionado al finalizar el pedido.
+          </div>
+        </div>
+      </div>
+
+      <!-- Pregunta 6 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingSix">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+            data-bs-target="#collapseSix" aria-expanded="false" aria-controls="collapseSix">
+            ¿Es seguro realizar compras en el sitio?
+          </button>
+        </h2>
+        <div id="collapseSix" class="accordion-collapse collapse"
+          aria-labelledby="headingSix" data-bs-parent="#faqAccordion">
+          <div class="accordion-body">
+            Sí. El sitio utiliza conexiones seguras (HTTPS) y validación de datos para
+            proteger la información del usuario durante el proceso de compra.
+          </div>
+        </div>
+      </div>
+
+      <!-- Pregunta 7 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingSeven">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+            data-bs-target="#collapseSeven" aria-expanded="false" aria-controls="collapseSeven">
+            ¿Cómo puedo contactar con la empresa?
+          </button>
+        </h2>
+        <div id="collapseSeven" class="accordion-collapse collapse"
+          aria-labelledby="headingSeven" data-bs-parent="#faqAccordion">
+          <div class="accordion-body">
+            Puedes contactarnos mediante el formulario de contacto del sitio
+            o a través de nuestros enlaces directos a WhatsApp y Facebook.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

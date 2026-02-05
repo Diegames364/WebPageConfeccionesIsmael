@@ -1,0 +1,80 @@
+{% load static %}
+
+<div class="mc2 d-flex flex-column h-100">
+  {% if items %}
+    <div class="mc2-items flex-grow-1 overflow-auto pe-1">
+      {% for it in items %}
+        <div class="mc2-item">
+          <a class="mc2-thumb" href="{% url 'cart:detail' %}">
+            {% with vimg=it.variant.variant_image %}
+              {% if vimg %}
+                <img src="{{ vimg.image.url }}" alt="{{ it.variant.product.name }}">
+              {% else %}
+                {% with img=it.variant.product.images.all.0 %}
+                  {% if img %}
+                    <img src="{{ img.image.url }}" alt="{{ it.variant.product.name }}">
+                  {% else %}
+                    <div class="mc2-thumb-fallback"><i class="bi bi-image"></i></div>
+                  {% endif %}
+                {% endwith %}
+              {% endif %}
+            {% endwith %}
+          </a>
+
+          <div class="mc2-mid">
+            <div class="mc2-name">{{ it.variant.product.name }}</div>
+            <div class="mc2-price">$ {{ it.variant.price }}</div>
+            <div class="mc2-qty">Cantidad: <strong>{{ it.quantity }}</strong></div>
+          </div>
+
+          <div class="mc2-right">
+            <form method="post" action="{% url 'cart:remove' it.id %}">
+              {% csrf_token %}
+              <button type="submit" class="mc2-del" title="Eliminar">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="mc2-footer border-top pt-3 px-3 pb-3">
+      <div class="mc2-total text-center mb-3">
+        <div class="mc2-total-label">Total</div>
+        <div class="mc2-total-val">$ {{ cart.subtotal }}</div>
+      </div>
+
+      <div class="mc2-actions">
+        <button type="button" class="mc2-btn mc2-btn-outline" data-bs-dismiss="offcanvas">
+          Seguir comprando
+        </button>
+
+        <a class="mc2-btn mc2-btn-green" href="{% url 'orders:checkout' %}">
+          Finalizar compra
+        </a>
+
+        <form method="post" action="{% url 'cart:clear' %}">
+          {% csrf_token %}
+          <button type="submit" class="mc2-btn mc2-btn-danger">
+            Vaciar carrito
+          </button>
+        </form>
+
+        <a class="mc2-btn mc2-btn-outline" href="{% url 'cart:detail' %}">
+          Ver carrito
+        </a>
+      </div>
+    </div>
+
+  {% else %}
+    <div class="mc2-empty flex-grow-1 d-flex flex-column justify-content-center align-items-center p-4">
+      <div class="mc2-empty-ico"><i class="bi bi-bag"></i></div>
+      <div class="fw-semibold">Tu carrito está vacío</div>
+      <div class="text-muted small">Agrega productos y aparecerán aquí.</div>
+
+      <button type="button" class="mc2-btn mc2-btn-outline mt-3" data-bs-dismiss="offcanvas">
+        Seguir comprando
+      </button>
+    </div>
+  {% endif %}
+</div>

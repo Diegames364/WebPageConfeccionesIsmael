@@ -1,0 +1,140 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-9 col-lg-7">
+    <div class="bg-white rounded-4 shadow-sm p-4 p-md-5 animate-in">
+
+      <div class="d-flex align-items-start justify-content-between gap-3">
+        <div>
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="icon-pill"><i class="bi bi-person-plus"></i></span>
+            <h3 class="mb-0">Crear cuenta</h3>
+          </div>
+          <div class="text-muted small">Regístrate para guardar tus datos y comprar más rápido.</div>
+        </div>
+      </div>
+
+      <hr class="my-4">
+
+      {% if form.errors %}
+        <div class="alert alert-danger rounded-4 d-flex gap-2 align-items-start" role="alert">
+          <i class="bi bi-exclamation-triangle-fill mt-1"></i>
+          <div>
+            <div class="fw-semibold">Revisa tus datos</div>
+            <div class="small text-danger-emphasis">
+              {% if form.non_field_errors %}
+                {{ form.non_field_errors|striptags }}
+              {% else %}
+                Hay campos con errores. Corrígelos para continuar.
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endif %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">{{ form.first_name.label }}</label>
+            {{ form.first_name }}
+            {% if form.first_name.errors %}
+              <div class="invalid-feedback d-block">{{ form.first_name.errors|striptags }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">{{ form.last_name.label }}</label>
+            {{ form.last_name }}
+            {% if form.last_name.errors %}
+              <div class="invalid-feedback d-block">{{ form.last_name.errors|striptags }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">{{ form.email.label }}</label>
+            {{ form.email }}
+            {% if form.email.errors %}
+              <div class="invalid-feedback d-block">{{ form.email.errors|striptags }}</div>
+            {% else %}
+              <div class="form-text">Ej: usuario@mail.com</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">{{ form.password1.label }}</label>
+            <div class="position-relative">
+              {{ form.password1 }}
+              <button type="button"
+                      class="btn btn-sm btn-light border position-absolute top-50 end-0 translate-middle-y me-2"
+                      data-toggle-pw="#id_password1"
+                      aria-label="Mostrar u ocultar contraseña">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+            {% if form.password1.errors %}
+              <div class="invalid-feedback d-block">{{ form.password1.errors|striptags }}</div>
+            {% else %}
+              <div class="form-text">Mínimo 8 caracteres recomendado.</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">{{ form.password2.label }}</label>
+            <div class="position-relative">
+              {{ form.password2 }}
+              <button type="button"
+                      class="btn btn-sm btn-light border position-absolute top-50 end-0 translate-middle-y me-2"
+                      data-toggle-pw="#id_password2"
+                      aria-label="Mostrar u ocultar contraseña">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+            {% if form.password2.errors %}
+              <div class="invalid-feedback d-block">{{ form.password2.errors|striptags }}</div>
+            {% else %}
+              <div class="form-text">Repite la contraseña para confirmar.</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <button class="btn btn-dark btn-pill w-100 mt-4 py-2" type="submit">
+          Registrarme <i class="bi bi-check2 ms-1"></i>
+        </button>
+
+        <div class="text-center mt-3">
+          <span class="text-muted small">¿Ya tienes cuenta?</span>
+          <a class="ms-1" href="{% url 'accounts:login' %}">Iniciar sesión</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll("input, textarea, select").forEach(el => {
+    if (!el.classList.contains("form-check-input")) el.classList.add("form-control");
+  });
+
+  (function(){
+    document.querySelectorAll(".invalid-feedback.d-block").forEach(err => {
+      const wrap = err.closest(".mb-3, .col-md-6, .col-12") || err.parentElement;
+      const input = wrap ? wrap.querySelector("input, textarea, select") : null;
+      if(input) input.classList.add("is-invalid");
+    });
+  })();
+
+  document.querySelectorAll("[data-toggle-pw]").forEach(btn => {
+    const sel = btn.getAttribute("data-toggle-pw");
+    const input = document.querySelector(sel);
+    if(!input) return;
+
+    btn.addEventListener("click", () => {
+      const isPw = input.getAttribute("type") === "password";
+      input.setAttribute("type", isPw ? "text" : "password");
+      btn.innerHTML = isPw ? '<i class="bi bi-eye-slash"></i>' : '<i class="bi bi-eye"></i>';
+    });
+  });
+</script>
+{% endblock %}

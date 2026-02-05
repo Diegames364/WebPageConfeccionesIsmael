@@ -1,0 +1,168 @@
+{% extends "base/base.html" %}
+{% load static l10n %} {% block content %}
+<link rel="stylesheet" href="{% static 'css/product-detail.css' %}?v=IMG_FIX">
+
+<div class="container py-5">
+  
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'catalog:list' %}" class="text-muted text-decoration-none">Catálogo</a>
+      </li>
+      {% if product.category %}
+        <li class="breadcrumb-item">
+            <a href="#" class="text-muted text-decoration-none">{{ product.category.name }}</a>
+        </li>
+      {% endif %}
+      <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">{{ product.name }}</li>
+    </ol>
+  </nav>
+
+  <div class="row g-3 g-lg-5">
+    
+    <div class="col-lg-6">
+      <div class="gallery-container sticky-lg-top" style="top: 2rem; z-index: 1;">
+        {% with imgs=product.images.all %}
+          <div class="main-image-wrapper bg-white border shadow-sm mb-3 position-relative ratio ratio-1x1">
+            {% if imgs and imgs|length > 0 %}
+              <img id="mainImg"
+                   src="{{ imgs.0.image.url }}"
+                   class="product-main-img w-100 h-100 p-3"
+                   alt="{{ imgs.0.alt_text|default:product.name }}">
+            {% else %}
+              <div class="d-flex align-items-center justify-content-center h-100 w-100 text-muted bg-light">
+                <div class="text-center">
+                  <i class="bi bi-card-image fs-1 d-block mb-2"></i>
+                  <span>Sin imagen</span>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+
+          {% if imgs and imgs|length > 1 %}
+            <div class="thumbs-wrapper bg-white rounded-4 border shadow-sm p-3">
+                <div class="d-flex gap-2 flex-wrap justify-content-center justify-content-lg-start thumb-list">
+                  {% for im in imgs %}
+                    <button type="button"
+                            class="thumb-btn rounded-3 overflow-hidden border {% if forloop.first %}active{% endif %}"
+                            data-src="{{ im.image.url }}"
+                            aria-label="Ver imagen">
+                      <img src="{{ im.image.url }}" class="thumb-img w-100 h-100 object-fit-cover">
+                    </button>
+                  {% endfor %}
+                </div>
+            </div>
+          {% endif %}
+        {% endwith %}
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="product-info">
+        
+        <form method="post" class="needs-validation" novalidate>
+          {% csrf_token %}
+          
+          <div class="card border-0 shadow-sm rounded-4 p-3 p-lg-4 bg-white">
+            
+            {% if product.category %}
+                <div class="mb-2">
+                    <span class="badge bg-light text-dark border fw-medium px-3 py-2 rounded-pill">
+                        {{ product.category.name }}
+                    </span>
+                </div>
+            {% endif %}
+            
+            <h1 class="display-6 fw-bold mb-2 text-dark">{{ product.name }}</h1>
+            
+            <div class="description-box text-muted mb-4 fs-6">
+               {{ product.description|default:"Sin descripción detallada."|linebreaks }}
+            </div>
+            
+            <hr class="text-muted opacity-25 mb-4">
+
+            {% if not variant_choices %}
+               <div class="alert alert-warning rounded-3 d-flex align-items-center">
+                 <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+                 <div>No hay stock disponible actualmente.</div>
+               </div>
+            {% else %}
+               
+               <div class="mb-3">
+                 <label for="variantSelect" class="form-label fw-semibold">Opciones disponibles:</label>
+                 
+                 <select name="variant_id" id="variantSelect" class="form-select form-select-lg rounded-3" required>
+                   {% for v in variant_choices %}
+                     <option value="{{ v.id }}"
+                             data-price="{{ v.price|unlocalize }}"
+                             data-stock="{{ v.stock }}"
+                             data-image="{{ v.image_url|default:'' }}"
+                             
+                             data-color="{{ v.color.name|default:'' }}" 
+                             data-hex="{{ v.color.hex_code|default:'' }}"
+                             
+                             {% if v.stock == 0 %}disabled{% endif %}
+                             {% if forloop.last %}selected{% endif %}>
+                       {{ v.label }} — ${{ v.price }} {% if v.stock == 0 %}(Agotado){% endif %}
+                     </option>
+                   {% endfor %}
+                 </select>
+
+                 <div class="form-text mt-2" id="stockHint"></div>
+               </div>
+
+               <div id="colorDisplay" class="mb-4 d-none align-items-center gap-2">
+                   <span class="fw-semibold text-dark">Color:</span>
+                   <span id="colorDot" 
+                         class="d-inline-block border rounded-circle shadow-sm" 
+                         style="width: 20px; height: 20px;"></span>
+                   <span id="colorName" class="text-muted"></span>
+               </div>
+
+               <div class="mb-4">
+                 <label class="form-label fw-semibold">Cantidad:</label>
+                 <div class="input-group input-group-lg quantity-selector" style="max-width: 160px;">
+                   <button class="btn btn-outline-secondary" type="button" id="btnMinus">
+                     <i class="bi bi-dash-lg"></i>
+                   </button>
+                   <input type="number" 
+                          class="form-control text-center border-secondary" 
+                          name="qty" 
+                          id="qtyInput" 
+                          value="1" 
+                          min="1">
+                   <button class="btn btn-outline-secondary" type="button" id="btnPlus">
+                     <i class="bi bi-plus-lg"></i>
+                   </button>
+                 </div>
+               </div>
+
+               <hr class="my-4 text-muted opacity-25">
+
+               <div class="price-summary mb-4">
+                 <div class="d-flex justify-content-between align-items-center mb-2">
+                   <span class="text-muted">Precio unitario:</span>
+                   <span class="fs-5">$<span id="priceText">0.00</span></span>
+                 </div>
+                 <div class="d-flex justify-content-between align-items-center">
+                   <span class="fw-bold fs-5">Total a pagar:</span>
+                   <span class="fw-bold display-6 text-success">$<span id="lineTotalText">0.00</span></span>
+                 </div>
+               </div>
+
+               <div class="d-grid gap-3 d-md-flex">
+                 <button class="btn btn-dark btn-lg rounded-pill flex-grow-1 px-5" type="submit" id="addBtn">
+                   <i class="bi bi-bag-plus-fill me-2"></i> Agregar al carrito
+                 </button>
+                 <a class="btn btn-outline-dark btn-lg rounded-pill px-4" href="{% url 'catalog:list' %}">Volver</a>
+               </div>
+            {% endif %}
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/product-detail.js' %}?v=3.0"></script>
+{% endblock %}

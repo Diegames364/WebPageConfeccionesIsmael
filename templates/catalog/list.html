@@ -1,0 +1,206 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/catalog-list.css' %}">
+
+<div class="catalog-hero mb-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h2 class="mb-1">Catálogo</h2>
+      <div class="muted small">
+        Explora productos, filtra por precio y características.
+      </div>
+    </div>
+
+    <form class="d-flex gap-2 align-items-center" method="get">
+      <input
+        type="text"
+        name="q"
+        value="{{ q }}"
+        class="form-control search-input"
+        placeholder="Buscar..."
+      />
+      {# Filtros ocultos para mantenerlos al buscar #}
+      {% if get_params.min %}<input type="hidden" name="min" value="{{ get_params.min }}">{% endif %}
+      {% if get_params.max %}<input type="hidden" name="max" value="{{ get_params.max }}">{% endif %}
+      {% if get_params.in_stock %}<input type="hidden" name="in_stock" value="{{ get_params.in_stock }}">{% endif %}
+      {% if get_params.sort %}<input type="hidden" name="sort" value="{{ get_params.sort }}">{% endif %}
+      
+      <button type="submit" class="btn btn-light text-nowrap">
+        <i class="bi bi-search"></i>
+      </button>
+    </form>
+  </div>
+</div>
+
+<div class="row g-4">
+  
+  <aside class="col-12 col-lg-3">
+    <div class="filter-card bg-white p-3 filter-sticky">
+       <div class="d-flex justify-content-between align-items-center mb-3">
+         <h5 class="mb-0 fw-bold">Filtros</h5>
+         {% if request.GET %}
+           <a href="{% url 'catalog:list' %}" class="small text-danger text-decoration-none">
+             Limpiar
+           </a>
+         {% endif %}
+       </div>
+       
+       <form method="get" id="filterForm">
+         {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+
+         <div class="mb-3">
+           <label class="form-label small fw-bold text-muted">Precio</label>
+           <div class="d-flex gap-2">
+             <input type="number" name="min" class="form-control form-control-sm" placeholder="Min" value="{{ get_params.min }}">
+             <input type="number" name="max" class="form-control form-control-sm" placeholder="Max" value="{{ get_params.max }}">
+           </div>
+         </div>
+
+         <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" name="in_stock" value="1" id="checkStock" 
+                   {% if get_params.in_stock %}checked{% endif %}>
+            <label class="form-check-label small" for="checkStock">Solo en stock</label>
+         </div>
+         
+         <div class="mb-3">
+            <label class="form-label small fw-bold text-muted">Ordenar por</label>
+            <select name="sort" class="form-select form-select-sm">
+              <option value="">Recientes</option>
+              <option value="price_asc" {% if get_params.sort == 'price_asc' %}selected{% endif %}>Precio: Menor a Mayor</option>
+              <option value="price_desc" {% if get_params.sort == 'price_desc' %}selected{% endif %}>Precio: Mayor a Menor</option>
+            </select>
+         </div>
+
+         <button type="submit" class="btn btn-dark btn-sm w-100 rounded-pill">Aplicar filtros</button>
+       </form>
+    </div>
+  </aside>
+
+  <section class="col-12 col-lg-9">
+    {% if page_obj.object_list %}
+      
+      {# --- SECCIÓN 1: PRODUCTOS SIN CATEGORÍA --- #}
+      {# Recorremos para encontrar los que NO tienen categoría #}
+      <div class="row g-3 mb-4">
+        {% for p in page_obj.object_list %}
+          {% if not p.category %}
+            <div class="col-12 col-sm-6 col-lg-4">
+               <div class="bg-white product-card h-100 position-relative">
+                  {% with img=p.images.all|first %}
+                    {% if img %}
+                      <img class="product-img" src="{{ img.image.url }}" alt="{{ img.alt_text }}">
+                    {% else %}
+                      <div class="product-img d-flex align-items-center justify-content-center text-muted bg-light">
+                        <i class="bi bi-image fs-1"></i>
+                      </div>
+                    {% endif %}
+                  {% endwith %}
+
+                  <div class="p-3 d-flex flex-column flex-grow-1">
+                    <h6 class="mb-1 text-dark">{{ p.name }}</h6>
+                    <div class="text-muted small mb-3 flex-grow-1">
+                       {{ p.description|truncatechars:70 }}
+                    </div>
+                    
+                    {% if p.min_price %}
+                       <div class="fw-bold mb-2">${{ p.min_price }}</div>
+                    {% endif %}
+
+                    <a class="btn btn-outline-dark btn-pill w-100 mt-auto stretched-link" href="{% url 'catalog:detail' p.slug %}">
+                      Ver producto <i class="bi bi-arrow-right"></i>
+                    </a>
+                  </div>
+                </div>
+                </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+
+      {# --- SECCIÓN 2: PRODUCTOS AGRUPADOS POR CATEGORÍA --- #}
+      {# Agrupamos la lista (ya viene ordenada por category desde el modelo) #}
+      {% regroup page_obj.object_list by category as category_list %}
+
+      {% for category_group in category_list %}
+        {# Solo mostramos el grupo si la categoría NO es None #}
+        {% if category_group.grouper %}
+            
+            <div class="category-section-title">
+               {{ category_group.grouper.name }}
+            </div>
+
+            <div class="row g-3 mb-4">
+              {% for p in category_group.list %}
+                <div class="col-12 col-sm-6 col-lg-4">
+                   <div class="bg-white product-card h-100 position-relative">
+                      {% with img=p.images.all|first %}
+                        {% if img %}
+                          <img class="product-img" src="{{ img.image.url }}" alt="{{ img.alt_text }}">
+                        {% else %}
+                          <div class="product-img d-flex align-items-center justify-content-center text-muted bg-light">
+                            <i class="bi bi-image fs-1"></i>
+                          </div>
+                        {% endif %}
+                      {% endwith %}
+
+                      <div class="p-3 d-flex flex-column flex-grow-1">
+                        <h6 class="mb-1 text-dark">{{ p.name }}</h6>
+                        <div class="text-muted small mb-3 flex-grow-1">
+                           {{ p.description|truncatechars:70 }}
+                        </div>
+                        
+                        {% if p.min_price %}
+                           <div class="fw-bold mb-2">${{ p.min_price }}</div>
+                        {% endif %}
+
+                        <a class="btn btn-outline-dark btn-pill w-100 mt-auto stretched-link" href="{% url 'catalog:detail' p.slug %}">
+                          Ver producto <i class="bi bi-arrow-right"></i>
+                        </a>
+                      </div>
+                    </div>
+                   </div>
+              {% endfor %}
+            </div>
+
+        {% endif %}
+      {% endfor %}
+
+      
+      {% if page_obj.paginator.num_pages > 1 %}
+        <nav class="mt-5">
+          <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link border-0 text-white bg-transparent" href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}">Anterior</a>
+              </li>
+            {% endif %}
+
+            <li class="page-item disabled">
+              <span class="page-link border-0 bg-transparent fw-bold text-white">
+                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+              </span>
+            </li>
+
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link border-0 text-white bg-transparent" href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}">Siguiente</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+
+    {% else %}
+      <div class="text-center py-5 text-white">
+        <i class="bi bi-search fs-1 mb-3 opacity-50"></i>
+        <h4>No se encontraron productos</h4>
+        <p class="opacity-75">Intenta con otros filtros o términos de búsqueda.</p>
+        <a href="{% url 'catalog:list' %}" class="btn btn-light btn-pill mt-2">Ver todo</a>
+      </div>
+    {% endif %}
+  </section>
+
+</div>
+{% endblock %}

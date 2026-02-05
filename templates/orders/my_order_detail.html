@@ -1,0 +1,113 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="bg-white rounded-4 shadow-sm p-4">
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+    <div>
+      <h2 class="mb-1">Pedido #{{ order.id }}</h2>
+      <div class="text-muted">{{ order.created_at|date:"d/m/Y H:i" }}</div>
+
+      <div class="mt-2">
+        {% if order.status == "pending" %}
+          <span class="badge bg-warning text-dark">Pendiente</span>
+        {% elif order.status == "confirmed" %}
+          <span class="badge bg-primary">Confirmado</span>
+        {% elif order.status == "preparing" %}
+          <span class="badge bg-info text-dark">En preparación</span>
+        {% elif order.status == "shipped" %}
+          <span class="badge bg-purple">Enviado</span>
+        {% elif order.status == "delivered" %}
+          <span class="badge bg-success">Entregado</span>
+        {% elif order.status == "cancelled" %}
+          <span class="badge bg-danger">Cancelado</span>
+        {% else %}
+          <span class="badge bg-secondary">{{ order.get_status_display }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <a class="btn btn-outline-dark btn-pill"
+         href="{% url 'orders:receipt' order.id %}">
+        <i class="bi bi-receipt"></i> Ver recibo
+      </a>
+      <a class="btn btn-outline-secondary btn-pill"
+         href="{% url 'orders:my_orders' %}">
+        ← Volver
+      </a>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <h5 class="mb-2">Productos</h5>
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Detalle</th>
+              <th class="text-end">P. Unit</th>
+              <th class="text-center">Cant</th>
+              <th class="text-end">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for it in order.items.all %}
+            <tr>
+              <td class="fw-semibold">{{ it.product_name }}</td>
+              <td class="text-muted small">{{ it.variant_description }}</td>
+              <td class="text-end">${{ it.unit_price }}</td>
+              <td class="text-center">{{ it.quantity }}</td>
+              <td class="text-end fw-semibold">${{ it.line_total }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if order.notes %}
+        <div class="mt-3">
+          <h5 class="mb-2">Notas</h5>
+          <div class="text-muted">{{ order.notes }}</div>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="col-lg-5">
+      <div class="bg-light rounded-4 p-3">
+        <h5 class="mb-3">Resumen</h5>
+
+        <div class="d-flex justify-content-between">
+          <span>Subtotal</span>
+          <strong>${{ order.subtotal }}</strong>
+        </div>
+        <div class="d-flex justify-content-between">
+          <span>Envío</span>
+          <strong>${{ order.shipping_cost }}</strong>
+        </div>
+        <div class="d-flex justify-content-between mt-2">
+          <span>Total</span>
+          <strong>${{ order.total }}</strong>
+        </div>
+
+        <hr>
+
+        <h6 class="mb-2">Entrega</h6>
+        <div class="text-muted small">
+          {% if order.is_pickup %}
+            Retiro en tienda
+          {% else %}
+            Envío a domicilio
+            {% if order.shipping_zone %}
+              — Zona: {{ order.shipping_zone.name }}
+            {% endif %}
+          {% endif %}
+        </div>
+
+        <h6 class="mt-3 mb-2">Pago</h6>
+        <div class="text-muted small">{{ order.payment_method }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

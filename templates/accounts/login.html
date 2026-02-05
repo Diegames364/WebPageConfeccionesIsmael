@@ -1,0 +1,104 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/login.css' %}">
+
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-7 col-lg-5">
+      
+      <div class="bg-white rounded-4 shadow-sm p-4 p-md-5 login-card animate-in">
+
+        <div class="d-flex align-items-start justify-content-between gap-3">
+          <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <span class="icon-pill"><i class="bi bi-box-arrow-in-right"></i></span>
+              <h3 class="mb-0 fw-bold">Iniciar sesión</h3>
+            </div>
+            <div class="text-muted small">
+              Accede para ver tus pedidos y finalizar compras más rápido.
+            </div>
+          </div>
+        </div>
+
+        <hr class="my-4 opacity-25">
+
+        {% if form.errors %}
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger rounded-4 d-flex gap-2 align-items-start shadow-sm" role="alert">
+              <i class="bi bi-exclamation-triangle-fill mt-1"></i>
+              <div>
+                <div class="fw-bold">Error de acceso</div>
+                <div class="small">
+                  {{ form.non_field_errors|striptags }}
+                </div>
+              </div>
+            </div>
+          {% endif %}
+        {% endif %}
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+          
+          <div class="mb-3">
+            {% with field=form.visible_fields.0 %}
+              <label for="{{ field.id_for_label }}" class="form-label fw-semibold">
+                {{ field.label }}
+              </label>
+              
+              {{ field }}
+              
+              {% if field.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ field.errors|striptags }}
+                </div>
+              {% endif %}
+            {% endwith %}
+          </div>
+
+          <div class="mb-3">
+            {% with field=form.visible_fields.1 %}
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <label for="{{ field.id_for_label }}" class="form-label fw-semibold mb-0">
+                  {{ field.label }}
+                </label>
+                <a href="#" class="forgot-link">¿Olvidaste tu contraseña?</a> 
+              </div>
+              
+              <div class="input-group">
+                {{ field }}
+                
+                <button class="btn btn-outline-secondary" type="button" 
+                        data-toggle-pw="#{{ field.id_for_label }}">
+                  <i class="bi bi-eye"></i>
+                </button>
+                
+                {% if field.errors %}
+                  <div class="invalid-feedback d-block">
+                    {{ field.errors|striptags }}
+                  </div>
+                {% endif %}
+              </div>
+            {% endwith %}
+          </div>
+
+          <button class="btn btn-dark btn-lg rounded-pill w-100 py-2 mt-2 shadow-sm" type="submit">
+            Entrar <i class="bi bi-arrow-right ms-1"></i>
+          </button>
+
+          <div class="text-center mt-4 pt-2 border-top">
+            <span class="text-muted small">¿No tienes cuenta?</span>
+            <a class="ms-1 fw-semibold text-decoration-none text-dark" href="{% url 'accounts:register' %}">
+              Crear cuenta
+            </a>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/login.js' %}"></script>
+{% endblock %}

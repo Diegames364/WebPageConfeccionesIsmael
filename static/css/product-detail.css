@@ -1,0 +1,78 @@
+/*
+  ========================================
+  PRODUCT DETAIL CSS (Definitivo)
+  ========================================
+*/
+
+/* IMAGEN PRINCIPAL */
+.main-image-wrapper {
+  border-radius: 1rem !important;
+  overflow: hidden !important; 
+  display: block;
+}
+
+.main-image-wrapper:hover {
+  box-shadow: 0 .5rem 1rem rgba(0,0,0,.08)!important;
+}
+
+.product-main-img {
+  display: block;       
+  width: 100%;          
+  height: 100%;         
+  max-height: 100%;
+  object-fit: cover;    
+  border-radius: inherit; 
+}
+
+/* MINIATURAS */
+.thumb-btn {
+  width: 60px;
+  height: 60px;
+  padding: 0;
+  background: #fff;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.2s ease;
+  border: 2px solid transparent !important;
+}
+
+.thumb-btn:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+}
+
+.thumb-btn.active {
+  opacity: 1;
+  border-color: #0d6efd !important;
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.2);
+}
+
+.thumb-img {
+  object-fit: cover;
+}
+
+/* INPUT CANTIDAD */
+.quantity-selector .btn {
+  z-index: 0;
+}
+.quantity-selector input {
+  font-weight: 600;
+}
+/* Quitar spinners del input number */
+.quantity-selector input::-webkit-outer-spin-button,
+.quantity-selector input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.quantity-selector input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* TARJETA INFO */
+.product-info .card {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+}
+
+#lineTotalText {
+  transition: color 0.3s ease;
+}

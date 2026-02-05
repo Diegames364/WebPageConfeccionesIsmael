@@ -1,0 +1,72 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="bg-white rounded-4 shadow-sm p-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Mis pedidos</h2>
+    <a class="btn btn-outline-dark btn-pill" href="{% url 'catalog:list' %}">
+      <i class="bi bi-bag"></i> Seguir comprando
+    </a>
+  </div>
+
+  {% if orders %}
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+            <th class="text-end">Total</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in orders %}
+          <tr>
+            <td class="fw-semibold">{{ order.id }}</td>
+            <td class="text-muted">{{ order.created_at|date:"d/m/Y H:i" }}</td>
+            <td>
+              {% if order.status == "pending" %}
+                <span class="badge bg-warning text-dark">Pendiente</span>
+              {% elif order.status == "confirmed" %}
+                <span class="badge bg-primary">Confirmado</span>
+              {% elif order.status == "preparing" %}
+                <span class="badge bg-info text-dark">En preparación</span>
+              {% elif order.status == "shipped" %}
+                <span class="badge bg-purple">Enviado</span>
+              {% elif order.status == "delivered" %}
+                <span class="badge bg-success">Entregado</span>
+              {% elif order.status == "cancelled" %}
+                <span class="badge bg-danger">Cancelado</span>
+              {% else %}
+                <span class="badge bg-secondary">{{ order.get_status_display }}</span>
+              {% endif %}
+            </td>
+
+            <td class="text-end fw-semibold">${{ order.total }}</td>
+            <td class="text-end">
+              <a class="btn btn-sm btn-outline-dark btn-pill"
+                 href="{% url 'orders:my_order_detail' order.id %}">
+                Ver detalle
+              </a>
+              <a class="btn btn-sm btn-dark btn-pill"
+                 href="{% url 'orders:receipt' order.id %}">
+                Recibo
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="text-center py-4">
+      <div class="text-muted mb-3">Aún no has realizado pedidos.</div>
+      <a class="btn btn-dark btn-pill" href="{% url 'catalog:list' %}">
+        Ir al catálogo <i class="bi bi-arrow-right"></i>
+      </a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
