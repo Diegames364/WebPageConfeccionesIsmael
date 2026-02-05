@@ -141,20 +141,22 @@ USE_I18N = True
 USE_TZ = True
 
 # -------------------------------------------------------------------
-# STATIC FILES
+# STATIC & MEDIA FILES (CONFIGURACIÓN MODERNA DJANGO 6.0)
 # -------------------------------------------------------------------
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+MEDIA_URL = "/media/"  # <-- Agregado, necesario para referencias internas
 
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-
-# -------------------------------------------------------------------
-# MEDIA FILES (CLOUDINARY)
-# -------------------------------------------------------------------
-DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
-
-MEDIA_URL = '/media/'
+# Nueva configuración unificada para Django 5.0+ / 6.0
+STORAGES = {
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 CLOUDINARY_STORAGE = {
     "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME"),
@@ -213,4 +215,3 @@ JAZZMIN_UI_TWEAKS = {
     "accent": "accent-primary",
     "sidebar_nav_child_indent": True,
 }
-# -------------------------------------------------------------------
