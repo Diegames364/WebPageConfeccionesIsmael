@@ -256,136 +256,184 @@ def receipt_pdf(request, order_id):
     margin = 2 * cm
 
     # =====================================================
-    # 3. LOGO (Búsqueda inteligente Local vs Render)
+    # 3. ENCABEZADO: DATOS EMPRESA (IZQUIERDA)
+    # =====================================================
+    # Subimos un poco el cursor para aprovechar espacio
+    y_header = height - 2 * cm
+    
+    p.setFont("Helvetica-Bold", 12)
+    p.drawString(margin, y_header, "CONFECCIONES ISMAEL")
+    
+    p.setFont("Helvetica", 10)
+    y_header -= 0.5 * cm
+    p.drawString(margin, y_header, "RUC: 1234567890001")
+    y_header -= 0.5 * cm
+    p.drawString(margin, y_header, "Av. Rocafuerte y Carlos Maria")
+    y_header -= 0.5 * cm
+    p.drawString(margin, y_header, "Tel: 099 452 8554")
+    y_header -= 0.5 * cm
+    p.drawString(margin, y_header, f"Fecha: {order.created_at.strftime('%d/%m/%Y')}")
+
+    # =====================================================
+    # 4. LOGO (DERECHA)
     # =====================================================
     logo_path = None
     
-    # Intento 1: Buscador de estáticos (Local)
-    found = finders.find('branding/logo.png')
-    if found:
-        logo_path = found
-    
-    # Intento 2: STATIC_ROOT (Render/Producción)
-    if not logo_path and hasattr(settings, 'STATIC_ROOT') and settings.STATIC_ROOT:
-        potential = os.path.join(settings.STATIC_ROOT, 'branding', 'logo.png')
-        if os.path.exists(potential):
-            logo_path = potential
+    # Búsqueda en cascada para encontrar el archivo
+    posibles_rutas = [
+        # 1. Buscador de Django (Dev)
+        finders.find('branding/logo.png'),
+        # 2. Carpeta staticfiles en Render (Prod)
+        os.path.join(settings.STATIC_ROOT, 'branding', 'logo.png') if hasattr(settings, 'STATIC_ROOT') and settings.STATIC_ROOT else None,
+        # 3. Carpeta static del proyecto (Fallback)
+        os.path.join(settings.BASE_DIR, 'static', 'branding', 'logo.png'),
+        # 4. Ruta específica de Render (Hardcoded por seguridad)
+        '/opt/render/project/src/staticfiles/branding/logo.png' 
+    ]
 
-    # Intento 3: Fallback manual
-    if not logo_path:
-        logo_path = os.path.join(settings.BASE_DIR, 'static', 'branding', 'logo.png')
+    # Tomar la primera ruta que exista realmente
+    for ruta in posibles_rutas:
+        if ruta and os.path.exists(ruta):
+            logo_path = ruta
+            break
 
-    # Dibujar Logo
-    if logo_path and os.path.exists(logo_path):
+    # Dibujar Logo o Texto alternativo
+    # Posición X = Ancho total - Margen - Ancho Logo
+    logo_width = 4 * cm
+    logo_x = width - margin - logo_width
+    logo_y = height - 3.5 * cm # Ajusta esto para subir/bajar el logo
+
+    if logo_path:
         try:
-            p.drawImage(ImageReader(logo_path), margin, height - 3.5*cm, width=4*cm, preserveAspectRatio=True, mask='auto')
-        except Exception as e:
-            p.setFont("Helvetica-Bold", 18)
-            p.drawString(margin, height - 2.5*cm, "CONFECCIONES ISMAEL")
+            p.drawImage(ImageReader(logo_path), logo_x, logo_y, width=logo_width, preserveAspectRatio=True, mask='auto')
+        except Exception:
+            # Si falla la imagen, no dibujamos nada (ya está el nombre a la izquierda)
+            pass
     else:
-        p.setFont("Helvetica-Bold", 18)
-        p.drawString(margin, height - 2.5*cm, "CONFECCIONES ISMAEL")
+        # Si no encuentra logo, no ponemos nada porque ya pusimos el nombre a la izquierda
+        pass
 
     # =====================================================
-    # 4. ENCABEZADOS Y DATOS DEL CLIENTE
+    # 5. TÍTULO Y CLIENTE
     # =====================================================
-    # Info de la empresa (Derecha)
-    p.setFont("Helvetica", 10)
-    p.drawRightString(width - margin, height - 2*cm, "RUC: 1234567890001")
-    p.drawRightString(width - margin, height - 2.5*cm, "Av. Rocafuerte y Carlos Maria")
-    p.drawRightString(width - margin, height - 3*cm, "Tel: 099 452 8554")
-    p.drawRightString(width - margin, height - 3.5*cm, f"Fecha: {order.created_at.strftime('%d/%m/%Y')}")
+    y = height - 5.5 * cm
+    
+    # Línea separadora
+    p.setLineWidth(1)
+    p.line(margin, y + 0.5*cm, width - margin, y + 0.5*cm)
 
-    # Título central
+    # Título Centrado
     p.setFont("Helvetica-Bold", 14)
-    p.drawCentredString(width / 2, height - 5*cm, f"RECIBO DE ORDEN #{order.id}")
+    p.drawCentredString(width / 2, y, f"ORDEN DE PEDIDO #{order.id}")
 
-    # Datos del Cliente (Izquierda)
-    # CORRECCIÓN: Usamos los nombres reales de tu models.py (customer_name, etc.)
-    y = height - 6.5*cm
+    # Datos del Cliente (Recuadro gris suave opcional o texto limpio)
+    y -= 1 * cm
     p.setFont("Helvetica-Bold", 10)
-    p.drawString(margin, y, "Cliente:")
+    p.drawString(margin, y, "Facturar a:")
     
     p.setFont("Helvetica", 10)
+    y -= 0.5 * cm
     
-    # Nombre
+    # Usamos los campos reales de tu modelo
     c_name = order.customer_name if order.customer_name else "Cliente General"
-    p.drawString(margin + 2*cm, y, c_name)
+    c_address = order.customer_address if order.customer_address else "Dirección no registrada"
+    c_phone = order.customer_phone if order.customer_phone else "Sin teléfono"
     
-    # Dirección
-    y -= 0.5*cm
-    c_address = order.customer_address if order.customer_address else "Retiro en tienda"
+    p.drawString(margin, y, f"Nombre: {c_name}")
+    p.drawString(width/2, y, f"Teléfono: {c_phone}") # Teléfono a la mitad
+    
+    y -= 0.5 * cm
     p.drawString(margin, y, f"Dirección: {c_address}")
-    
-    # Teléfono
-    y -= 0.5*cm
-    c_phone = order.customer_phone if order.customer_phone else "N/A"
-    p.drawString(margin, y, f"Teléfono: {c_phone}")
+    p.drawString(width/2, y, f"Email: {order.user.email if order.user else 'N/A'}")
 
     # =====================================================
-    # 5. TABLA DE PRODUCTOS
+    # 6. TABLA DE PRODUCTOS
     # =====================================================
-    y -= 1.5 * cm
+    y -= 1.0 * cm
     
-    data = [['Producto', 'Cant.', 'Precio', 'Total']]
+    data = [['Producto / Descripción', 'Cant.', 'Precio', 'Total']]
     
-    # CORRECCIÓN: Usamos los campos de OrderItem (product_name, unit_price, line_total)
-    # Esto es más seguro porque son datos "congelados" al momento de la compra.
     for item in order.items.all():
-        # Descripción: Nombre + Detalles (Talla, Color)
+        # Nombre del producto
         desc = item.product_name
+        # Detalles de la variante (Talla, Color) si existen
         if item.variant_description:
-            desc += f" ({item.variant_description})"
+            desc += f"\n({item.variant_description})"
             
         data.append([
             desc,
             str(item.quantity),
-            f"${money(item.unit_price)}",  # Campo correcto: unit_price
-            f"${money(item.line_total)}"   # Campo correcto: line_total
+            f"${money(item.unit_price)}",
+            f"${money(item.line_total)}"
         ])
 
-    col_widths = [10*cm, 2*cm, 2.5*cm, 2.5*cm]
+    # Anchos de columna optimizados (Total disponible ~17cm)
+    col_widths = [9.5*cm, 2*cm, 2.75*cm, 2.75*cm]
+    
     table = Table(data, colWidths=col_widths)
 
-    table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.Color(0.95, 0.95, 0.95)),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+    # Estilo visual limpio
+    estilo_tabla = [
+        ('BACKGROUND', (0, 0), (-1, 0), colors.Color(0.2, 0.2, 0.2)), # Encabezado Oscuro
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),                 # Texto Blanco en header
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
         ('ALIGN', (2, 0), (-1, -1), 'RIGHT'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'), # Centrado vertical
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('FONTSIZE', (0, 0), (-1, 0), 9),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-    ]))
+        ('TOPPADDING', (0, 0), (-1, 0), 8),
+        # Filas de datos
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.Color(0.8, 0.8, 0.8)), # Líneas grises finas
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.Color(0.97, 0.97, 0.97)]), # Filas cebra
+    ]
+    
+    table.setStyle(TableStyle(estilo_tabla))
 
+    # Dibujar tabla
     w_table, h_table = table.wrapOn(p, width, height)
+    
+    # Control simple de salto de página (si la tabla es muy larga)
+    if y - h_table < 2*cm:
+        p.showPage()
+        y = height - margin
+        
     table.drawOn(p, margin, y - h_table)
 
     # =====================================================
-    # 6. TOTALES
+    # 7. TOTALES (ALINEADOS A LA DERECHA)
     # =====================================================
-    y_final = y - h_table - 1*cm
+    y_final = y - h_table - 0.8*cm
     
-    # Valores seguros (tu modelo tiene default=0, pero por seguridad usamos Decimal)
+    # Valores seguros
     shipping = order.shipping_cost if order.shipping_cost else Decimal("0.00")
-    subtotal = order.subtotal if order.subtotal else Decimal("0.00")
     total = order.total if order.total else Decimal("0.00")
+    # Calculamos subtotal seguro
+    subtotal = total - shipping
 
-    p.setFont("Helvetica-Bold", 11)
-    p.drawRightString(width - margin, y_final, f"Subtotal: ${money(subtotal)}")
+    # Bloque de totales
+    p.setFont("Helvetica", 10)
+    p.drawRightString(width - margin, y_final, f"Subtotal:   ${money(subtotal)}")
     
-    y_final -= 0.5 * cm
-    p.drawRightString(width - margin, y_final, f"Envío: ${money(shipping)}")
+    y_final -= 0.6 * cm
+    p.drawRightString(width - margin, y_final, f"Envío:   ${money(shipping)}")
     
-    y_final -= 0.2 * cm
-    p.line(width - margin - 4*cm, y_final, width - margin, y_final) # Línea separadora
+    y_final -= 0.3 * cm
+    # Línea de total
+    p.setLineWidth(1)
+    p.line(width - margin - 5*cm, y_final, width - margin, y_final)
     
-    y_final -= 0.5 * cm
+    y_final -= 0.6 * cm
     p.setFont("Helvetica-Bold", 12)
-    p.drawRightString(width - margin, y_final, f"TOTAL: ${money(total)}")
-    
-    # Finalizar PDF
+    p.drawRightString(width - margin, y_final, f"TOTAL:   ${money(total)}")
+
+    # Mensaje de despedida centrado abajo
+    p.setFont("Helvetica-Oblique", 8)
+    p.drawCentredString(width/2, 2*cm, "Gracias por preferir Confecciones Ismael")
+
     p.showPage()
     p.save()
     return response
