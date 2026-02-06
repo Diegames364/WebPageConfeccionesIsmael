@@ -36,7 +36,9 @@ class Cart(models.Model):
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items", verbose_name="Carrito")
-    variant = models.ForeignKey(Variant, on_delete=models.PROTECT, related_name="cart_items", verbose_name="Variante")
+    
+    variant = models.ForeignKey(Variant, on_delete=models.CASCADE, related_name="cart_items", verbose_name="Variante")
+    
     quantity = models.PositiveIntegerField("Cantidad", default=1)
 
     class Meta:
