@@ -169,9 +169,13 @@
       {% if page_obj.paginator.num_pages > 1 %}
         <nav class="mt-5">
           <ul class="pagination justify-content-center">
+            
             {% if page_obj.has_previous %}
               <li class="page-item">
-                <a class="page-link border-0 text-white bg-transparent" href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}">Anterior</a>
+                <a class="page-link border-0 text-white bg-transparent" 
+                   href="?page={{ page_obj.previous_page_number }}&{{ extra_params }}">
+                   Anterior
+                </a>
               </li>
             {% endif %}
 
@@ -183,9 +187,13 @@
 
             {% if page_obj.has_next %}
               <li class="page-item">
-                <a class="page-link border-0 text-white bg-transparent" href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}">Siguiente</a>
+                <a class="page-link border-0 text-white bg-transparent" 
+                   href="?page={{ page_obj.next_page_number }}&{{ extra_params }}">
+                   Siguiente
+                </a>
               </li>
             {% endif %}
+            
           </ul>
         </nav>
       {% endif %}
@@ -200,7 +208,6 @@
         </a>
       </div>
     {% endif %}
-
     </div>
   </div>
 </div>
