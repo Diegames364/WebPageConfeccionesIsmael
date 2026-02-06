@@ -236,6 +236,9 @@ def my_order_detail(request, order_id):
         "STATUS_BADGE": STATUS_BADGE,
     })
 
+def money(amount):
+    return f"{amount:.2f}"
+
 def receipt_pdf(request, order_id):
     # 1. Obtener la orden
     order = get_object_or_404(Order, id=order_id)
