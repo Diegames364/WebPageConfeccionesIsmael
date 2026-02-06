@@ -242,6 +242,10 @@ def money(amount):
     return f"{amount:.2f}"
 
 @login_required
+# ==============================================================================
+# FUNCIÓN FACTURA (receipt_pdf) - VERSIÓN FINAL CLOUDINARY
+# ==============================================================================
+@login_required
 def receipt_pdf(request, order_id):
     # 1. Obtener la orden
     order = get_object_or_404(Order, id=order_id)
@@ -258,7 +262,6 @@ def receipt_pdf(request, order_id):
     # =====================================================
     # 3. ENCABEZADO: DATOS EMPRESA (IZQUIERDA)
     # =====================================================
-    # Subimos un poco el cursor para aprovechar espacio
     y_header = height - 2 * cm
     
     p.setFont("Helvetica-Bold", 12)
@@ -275,43 +278,21 @@ def receipt_pdf(request, order_id):
     p.drawString(margin, y_header, f"Fecha: {order.created_at.strftime('%d/%m/%Y')}")
 
     # =====================================================
-    # 4. LOGO (DERECHA)
+    # 4. LOGO (DESDE CLOUDINARY)
     # =====================================================
-    logo_path = None
-    
-    # Búsqueda en cascada para encontrar el archivo
-    posibles_rutas = [
-        # 1. Buscador de Django (Dev)
-        finders.find('branding/logo.png'),
-        # 2. Carpeta staticfiles en Render (Prod)
-        os.path.join(settings.STATIC_ROOT, 'branding', 'logo.png') if hasattr(settings, 'STATIC_ROOT') and settings.STATIC_ROOT else None,
-        # 3. Carpeta static del proyecto (Fallback)
-        os.path.join(settings.BASE_DIR, 'static', 'branding', 'logo.png'),
-        # 4. Ruta específica de Render (Hardcoded por seguridad)
-        '/opt/render/project/src/staticfiles/branding/logo.png' 
-    ]
+    # Tu URL exacta
+    logo_url = "https://res.cloudinary.com/det18qekc/image/upload/v1770385547/logo_yf5upb.png"
 
-    # Tomar la primera ruta que exista realmente
-    for ruta in posibles_rutas:
-        if ruta and os.path.exists(ruta):
-            logo_path = ruta
-            break
-
-    # Dibujar Logo o Texto alternativo
-    # Posición X = Ancho total - Margen - Ancho Logo
     logo_width = 4 * cm
     logo_x = width - margin - logo_width
-    logo_y = height - 3.5 * cm # Ajusta esto para subir/bajar el logo
+    logo_y = height - 3.5 * cm 
 
-    if logo_path:
-        try:
-            p.drawImage(ImageReader(logo_path), logo_x, logo_y, width=logo_width, preserveAspectRatio=True, mask='auto')
-        except Exception:
-            # Si falla la imagen, no dibujamos nada (ya está el nombre a la izquierda)
-            pass
-    else:
-        # Si no encuentra logo, no ponemos nada porque ya pusimos el nombre a la izquierda
-        pass
+    try:
+        # ReportLab descarga la imagen de la URL automáticamente
+        p.drawImage(ImageReader(logo_url), logo_x, logo_y, width=logo_width, preserveAspectRatio=True, mask='auto')
+    except Exception as e:
+        print(f"Error al cargar logo desde Cloudinary: {e}")
+        # Si falla, no rompemos el PDF, simplemente no sale el logo.
 
     # =====================================================
     # 5. TÍTULO Y CLIENTE
@@ -326,7 +307,7 @@ def receipt_pdf(request, order_id):
     p.setFont("Helvetica-Bold", 14)
     p.drawCentredString(width / 2, y, f"ORDEN DE PEDIDO #{order.id}")
 
-    # Datos del Cliente (Recuadro gris suave opcional o texto limpio)
+    # Datos del Cliente
     y -= 1 * cm
     p.setFont("Helvetica-Bold", 10)
     p.drawString(margin, y, "Facturar a:")
@@ -334,17 +315,18 @@ def receipt_pdf(request, order_id):
     p.setFont("Helvetica", 10)
     y -= 0.5 * cm
     
-    # Usamos los campos reales de tu modelo
+    # Validación de datos (para evitar errores si están vacíos)
     c_name = order.customer_name if order.customer_name else "Cliente General"
     c_address = order.customer_address if order.customer_address else "Dirección no registrada"
     c_phone = order.customer_phone if order.customer_phone else "Sin teléfono"
+    c_email = order.user.email if (order.user and order.user.email) else "N/A"
     
     p.drawString(margin, y, f"Nombre: {c_name}")
-    p.drawString(width/2, y, f"Teléfono: {c_phone}") # Teléfono a la mitad
+    p.drawString(width/2, y, f"Teléfono: {c_phone}") 
     
     y -= 0.5 * cm
     p.drawString(margin, y, f"Dirección: {c_address}")
-    p.drawString(width/2, y, f"Email: {order.user.email if order.user else 'N/A'}")
+    p.drawString(width/2, y, f"Email: {c_email}")
 
     # =====================================================
     # 6. TABLA DE PRODUCTOS
@@ -354,9 +336,7 @@ def receipt_pdf(request, order_id):
     data = [['Producto / Descripción', 'Cant.', 'Precio', 'Total']]
     
     for item in order.items.all():
-        # Nombre del producto
         desc = item.product_name
-        # Detalles de la variante (Talla, Color) si existen
         if item.variant_description:
             desc += f"\n({item.variant_description})"
             
@@ -367,36 +347,33 @@ def receipt_pdf(request, order_id):
             f"${money(item.line_total)}"
         ])
 
-    # Anchos de columna optimizados (Total disponible ~17cm)
+    # Anchos calculados: 9.5 + 2 + 2.75 + 2.75 = 17cm (Ancho útil A4)
     col_widths = [9.5*cm, 2*cm, 2.75*cm, 2.75*cm]
     
     table = Table(data, colWidths=col_widths)
 
-    # Estilo visual limpio
     estilo_tabla = [
-        ('BACKGROUND', (0, 0), (-1, 0), colors.Color(0.2, 0.2, 0.2)), # Encabezado Oscuro
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),                 # Texto Blanco en header
+        ('BACKGROUND', (0, 0), (-1, 0), colors.Color(0.2, 0.2, 0.2)), # Header oscuro
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),                 # Texto blanco
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
         ('ALIGN', (2, 0), (-1, -1), 'RIGHT'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'), # Centrado vertical
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 9),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
         ('TOPPADDING', (0, 0), (-1, 0), 8),
-        # Filas de datos
         ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
         ('FONTSIZE', (0, 1), (-1, -1), 9),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.Color(0.8, 0.8, 0.8)), # Líneas grises finas
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.Color(0.97, 0.97, 0.97)]), # Filas cebra
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.Color(0.8, 0.8, 0.8)),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.Color(0.97, 0.97, 0.97)]),
     ]
     
     table.setStyle(TableStyle(estilo_tabla))
 
-    # Dibujar tabla
     w_table, h_table = table.wrapOn(p, width, height)
     
-    # Control simple de salto de página (si la tabla es muy larga)
+    # Salto de página si la tabla es muy larga
     if y - h_table < 2*cm:
         p.showPage()
         y = height - margin
@@ -404,17 +381,15 @@ def receipt_pdf(request, order_id):
     table.drawOn(p, margin, y - h_table)
 
     # =====================================================
-    # 7. TOTALES (ALINEADOS A LA DERECHA)
+    # 7. TOTALES
     # =====================================================
     y_final = y - h_table - 0.8*cm
     
-    # Valores seguros
+    # Uso de Decimal("0.00") para asegurar matemáticas correctas
     shipping = order.shipping_cost if order.shipping_cost else Decimal("0.00")
     total = order.total if order.total else Decimal("0.00")
-    # Calculamos subtotal seguro
     subtotal = total - shipping
 
-    # Bloque de totales
     p.setFont("Helvetica", 10)
     p.drawRightString(width - margin, y_final, f"Subtotal:   ${money(subtotal)}")
     
@@ -422,7 +397,6 @@ def receipt_pdf(request, order_id):
     p.drawRightString(width - margin, y_final, f"Envío:   ${money(shipping)}")
     
     y_final -= 0.3 * cm
-    # Línea de total
     p.setLineWidth(1)
     p.line(width - margin - 5*cm, y_final, width - margin, y_final)
     
@@ -430,7 +404,7 @@ def receipt_pdf(request, order_id):
     p.setFont("Helvetica-Bold", 12)
     p.drawRightString(width - margin, y_final, f"TOTAL:   ${money(total)}")
 
-    # Mensaje de despedida centrado abajo
+    # Pie de página
     p.setFont("Helvetica-Oblique", 8)
     p.drawCentredString(width/2, 2*cm, "Gracias por preferir Confecciones Ismael")
 
