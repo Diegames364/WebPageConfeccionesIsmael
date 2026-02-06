@@ -1,4 +1,3 @@
-# Python estándar
 import os
 from io import BytesIO
 from decimal import Decimal
@@ -266,11 +265,10 @@ def receipt_pdf(request, order_id):
     
     p.setFont("Helvetica-Bold", 12)
     p.drawString(margin, y_header, "CONFECCIONES ISMAEL")
-    
     p.setFont("Helvetica", 10)
     y_header -= 0.5 * cm
-    p.drawString(margin, y_header, "RUC: 1234567890001")
-    y_header -= 0.5 * cm
+    #p.drawString(margin, y_header, "RUC: 1234567890001")
+    #y_header -= 0.5 * cm
     p.drawString(margin, y_header, "Av. Rocafuerte y Carlos Maria")
     y_header -= 0.5 * cm
     p.drawString(margin, y_header, "Tel: 099 452 8554")
@@ -280,7 +278,6 @@ def receipt_pdf(request, order_id):
     # =====================================================
     # 4. LOGO (DESDE CLOUDINARY)
     # =====================================================
-    # Tu URL exacta
     logo_url = "https://res.cloudinary.com/det18qekc/image/upload/v1770385547/logo_yf5upb.png"
 
     logo_width = 4 * cm
@@ -288,12 +285,9 @@ def receipt_pdf(request, order_id):
     logo_y = height - 3.5 * cm 
 
     try:
-        # ReportLab descarga la imagen de la URL automáticamente
         p.drawImage(ImageReader(logo_url), logo_x, logo_y, width=logo_width, preserveAspectRatio=True, mask='auto')
     except Exception as e:
         print(f"Error al cargar logo desde Cloudinary: {e}")
-        # Si falla, no rompemos el PDF, simplemente no sale el logo.
-
     # =====================================================
     # 5. TÍTULO Y CLIENTE
     # =====================================================
