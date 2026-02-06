@@ -27,6 +27,7 @@ from reportlab.pdfgen import canvas
 from reportlab.platypus import Table, TableStyle
 from reportlab.lib.utils import ImageReader
 
+from django.contrib.staticfiles import finders
 
 STATUS_BADGE = {
     "pending": "bg-warning text-dark",
@@ -236,187 +237,128 @@ def my_order_detail(request, order_id):
     })
 
 def receipt_pdf(request, order_id):
-    """
-    Recibo en PDF con diseño completo + logo centrado en cuadro redondeado
-    Ruta del logo: media/branding/logo.png
-    """
-    order = get_object_or_404(
-        Order.objects.prefetch_related("items"),
-        pk=order_id
-    )
+    # 1. Obtener la orden
+    order = get_object_or_404(Order, id=order_id)
 
-    # Seguridad: solo el dueño del pedido
-    if order.user_id and (not request.user.is_authenticated or order.user_id != request.user.id):
-        messages.error(request, "No tienes acceso a ese recibo.")
-        return redirect("core:home")
+    # 2. Configurar el PDF
+    response = HttpResponse(content_type='application/pdf')
+    filename = f"recibo_orden_{order.id}.pdf"
+    response['Content-Disposition'] = f'inline; filename="{filename}"'
 
-    buffer = BytesIO()
-    p = canvas.Canvas(buffer, pagesize=A4)
+    p = canvas.Canvas(response, pagesize=A4)
     width, height = A4
-
-    # Helper dinero
-    def money(x):
-        try:
-            return f"{Decimal(x):.2f}"
-        except Exception:
-            return "0.00"
-
     margin = 2 * cm
-    header_y = height - margin
-    y = header_y
-
 
     # =====================================================
-    # LOGO EN CUADRO REDONDEADO
+    # 3. LOGO (Búsqueda inteligente Local vs Render)
     # =====================================================
-    box_w = 4 * cm
-    box_h = 4 * cm
-    box_x = width - margin - box_w
-    box_y = header_y - box_h - 0.6 * cm
+    logo_path = None
+    
+    # Busca en carpetas static (Local)
+    found = finders.find('branding/logo.png')
+    if found:
+        logo_path = found
+    
+    # Busca en STATIC_ROOT (Render/Producción)
+    if not logo_path and hasattr(settings, 'STATIC_ROOT') and settings.STATIC_ROOT:
+        potential = os.path.join(settings.STATIC_ROOT, 'branding', 'logo.png')
+        if os.path.exists(potential):
+            logo_path = potential
 
+    # Fallback: Busca manual en la carpeta del proyecto
+    if not logo_path:
+        logo_path = os.path.join(settings.BASE_DIR, 'static', 'branding', 'logo.png')
 
-    p.setLineWidth(1)
-    p.roundRect(box_x, box_y, box_w, box_h, radius=8, stroke=1, fill=0)
-
-    logo_path = os.path.join(settings.MEDIA_ROOT, "branding", "logo.png")
-
-    if os.path.exists(logo_path):
+    # Dibujar
+    if logo_path and os.path.exists(logo_path):
         try:
-            logo = ImageReader(logo_path)
-            img_w, img_h = logo.getSize()
-            scale = min(box_w / img_w, box_h / img_h)
-            draw_w = img_w * scale
-            draw_h = img_h * scale
-            draw_x = box_x + (box_w - draw_w) / 2
-            draw_y = box_y + (box_h - draw_h) / 2
-            p.drawImage(logo, draw_x, draw_y, draw_w, draw_h, mask="auto")
-        except Exception:
-            p.setFont("Helvetica-Bold", 10)
-            p.drawCentredString(
-                box_x + box_w / 2,
-                box_y + box_h / 2 - 5,
-                "Logo"
-            )
+            # Dibuja el logo
+            p.drawImage(ImageReader(logo_path), margin, height - 3.5*cm, width=4*cm, preserveAspectRatio=True, mask='auto')
+        except Exception as e:
+            # Si falla (ej: formato incorrecto), escribe texto
+            p.setFont("Helvetica-Bold", 18)
+            p.drawString(margin, height - 2.5*cm, "CONFECCIONES ISMAEL")
     else:
-        p.setFont("Helvetica-Bold", 10)
-        p.drawCentredString(
-            box_x + box_w / 2,
-            box_y + box_h / 2 - 5,
-            "Logo (no disponible)"
-        )
+        p.setFont("Helvetica-Bold", 18)
+        p.drawString(margin, height - 2.5*cm, "CONFECCIONES ISMAEL")
 
     # =====================================================
-    # ENCABEZADO
+    # 4. ENCABEZADOS Y DATOS
     # =====================================================
-    y = box_y - 1 * cm
-    p.setFont("Helvetica-Bold", 16)
-    p.drawString(margin, header_y, "CONFECCIONES ISMAEL")
-    y = header_y - 0.6 * cm
-
     p.setFont("Helvetica", 10)
-    p.drawString(margin, y, "Recibo interno")
+    p.drawRightString(width - margin, height - 2*cm, "RUC: 1234567890001")
+    p.drawRightString(width - margin, height - 2.5*cm, "Av. Rocafuerte y Carlos Maria")
+    p.drawRightString(width - margin, height - 3*cm, "Tel: 099 452 8554")
+    p.drawRightString(width - margin, height - 3.5*cm, f"Fecha: {order.created_at.strftime('%d/%m/%Y')}")
+
+    p.setFont("Helvetica-Bold", 14)
+    p.drawCentredString(width / 2, height - 5*cm, f"RECIBO DE ORDEN #{order.id}")
+
+    # Datos Cliente
+    y = height - 6.5*cm
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(margin, y, "Cliente:")
     p.setFont("Helvetica", 10)
-    p.drawRightString(
-        width - margin,
-        header_y,
-        f"Pedido #{order.id} — {order.created_at.strftime('%d/%m/%Y %H:%M')}"
-    )
-
-    y -= 1 * cm
-
-    # =====================================================
-    # CLIENTE
-    # =====================================================
-    p.setFont("Helvetica-Bold", 12)
-    p.drawString(margin, y, "Cliente")
-    y -= 0.5 * cm
-
-    p.setFont("Helvetica", 10)
-    p.drawString(margin, y, f"Nombre: {order.customer_name or '(No especificado)'}")
-    y -= 0.45 * cm
-    p.drawString(margin, y, f"Teléfono: {order.customer_phone or '(No especificado)'}")
-    y -= 0.45 * cm
-    p.drawString(margin, y, f"Correo: {order.customer_email or '(No especificado)'}")
-    y -= 0.45 * cm
-    p.drawString(margin, y, f"Dirección: {order.customer_address or '(No especificado)'}")
-    y -= 0.8 * cm
+    
+    # Nombre
+    cliente_nombre = f"{order.first_name} {order.last_name}"
+    p.drawString(margin + 2*cm, y, cliente_nombre)
+    
+    # Dirección y Teléfono
+    y -= 0.5*cm
+    direccion = order.address if order.address else "Retiro en tienda"
+    p.drawString(margin, y, f"Dirección: {direccion}")
+    
+    y -= 0.5*cm
+    telefono = order.phone if order.phone else "N/A"
+    p.drawString(margin, y, f"Teléfono: {telefono}")
 
     # =====================================================
-    # ENTREGA
+    # 5. TABLA DE PRODUCTOS
     # =====================================================
-    p.setFont("Helvetica-Bold", 12)
-    p.drawString(margin, y, "Entrega")
-    y -= 0.5 * cm
-
-    p.setFont("Helvetica", 10)
-    if order.is_pickup:
-        p.drawString(margin, y, "Retiro en tienda")
-    else:
-        zone = order.shipping_zone.name if order.shipping_zone else "(Sin zona)"
-        p.drawString(
-            margin,
-            y,
-            f"Envío a domicilio — Zona: {zone} — Costo: ${money(order.shipping_cost)}"
-        )
-    y -= 0.9 * cm
-
-    # =====================================================
-    # DETALLE (TABLA)
-    # =====================================================
-    table_data = [
-        ["Producto", "Detalle", "P. Unit", "Cant", "Total"]
-    ]
-
-    for it in order.items.all():
-        table_data.append([
-            it.product_name,
-            it.variant_description or "",
-            f"${money(it.unit_price)}",
-            str(it.quantity),
-            f"${money(it.line_total)}",
+    y -= 1.5 * cm
+    
+    data = [['Producto', 'Cant.', 'Precio', 'Total']]
+    
+    for item in order.items.all():
+        desc = item.variant.product.name
+        # Agregar atributos (Talla M, Color Azul...)
+        attrs = [f"{a.name}: {a.value}" for a in item.variant.attributes.all()]
+        if attrs:
+            desc += f" ({', '.join(attrs)})"
+            
+        data.append([
+            desc,
+            str(item.quantity),
+            f"${money(item.price)}",
+            f"${money(item.get_total())}"
         ])
 
-    table = Table(
-        table_data,
-        colWidths=[6 * cm, 4 * cm, 2.5 * cm, 2 * cm, 2.5 * cm]
-    )
+    col_widths = [10*cm, 2*cm, 2.5*cm, 2.5*cm]
+    table = Table(data, colWidths=col_widths)
 
     table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.whitesmoke),
-        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-        ("FONT", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("ALIGN", (2, 1), (-1, -1), "RIGHT"),
-        ("ALIGN", (0, 0), (-1, 0), "CENTER"),
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.Color(0.95, 0.95, 0.95)),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
+        ('ALIGN', (2, 0), (-1, -1), 'RIGHT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
     ]))
 
-    table.wrapOn(p, width, height)
-    table.drawOn(p, margin, y - len(table_data) * 18)
-    y -= len(table_data) * 18 + 0.8 * cm
+    w_table, h_table = table.wrapOn(p, width, height)
+    table.drawOn(p, margin, y - h_table)
 
     # =====================================================
-    # TOTALES
+    # 6. TOTAL
     # =====================================================
-    p.setFont("Helvetica-Bold", 11)
-    p.drawRightString(width - margin, y, f"Subtotal: ${money(order.subtotal)}")
-    y -= 0.45 * cm
-    p.drawRightString(width - margin, y, f"Envío: ${money(order.shipping_cost)}")
-    y -= 0.45 * cm
-    p.drawRightString(width - margin, y, f"Total: ${money(order.total)}")
-
-    # =====================================================
-    # FINAL
-    # =====================================================
+    y_final = y - h_table - 1*cm
+    p.setFont("Helvetica-Bold", 12)
+    p.drawRightString(width - margin, y_final, f"TOTAL: ${money(order.total)}")
+    
     p.showPage()
     p.save()
-
-    pdf = buffer.getvalue()
-    buffer.close()
-
-    response = HttpResponse(content_type="application/pdf")
-    response["Content-Disposition"] = (
-        f'inline; filename="recibo_{order.id}.pdf"'
-    )
-    response.write(pdf)
     return response
