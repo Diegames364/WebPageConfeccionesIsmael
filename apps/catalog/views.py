@@ -69,10 +69,10 @@ def product_list(request):
     products = products.annotate(min_price=Min("variants__price"))
 
     # =========================================================
-    # LÓGICA DE ORDENAMIENTO (Agrupando por Categoría)
+    # LÓGICA DE ORDENAMIENTO (CORREGIDA)
+    # Primero agrupa por categoría, luego aplica el filtro
     # =========================================================
     if sort == "newest":
-        # Primero agrupa por categoría, luego por los más nuevos
         products = products.order_by("category__name", "-created_at")
     elif sort == "name_asc":
         products = products.order_by("category__name", "name")
@@ -125,6 +125,16 @@ def product_list(request):
     paginator = Paginator(products, 12)
     page_obj = paginator.get_page(request.GET.get("page"))
 
+    # =========================================================
+    # SOLUCIÓN AL BUCLE DE PAGINACIÓN
+    # =========================================================
+    # Copiamos los parámetros GET actuales para mantener filtros (búsqueda, precio)
+    # pero eliminamos 'page' para que no se duplique al cambiar de página.
+    params = request.GET.copy()
+    if 'page' in params:
+        del params['page']
+    extra_params = params.urlencode()
+
     return render(request, "catalog/list.html", {
         "page_obj": page_obj,
         "q": q,
@@ -135,6 +145,7 @@ def product_list(request):
         "price_stats": price_stats,
         "attr_ui": attr_ui,
         "get_params": request.GET,
+        "extra_params": extra_params, # Variable clave para el template
     })
 
 
@@ -149,6 +160,7 @@ def product_detail(request, slug):
         Variant.objects
         .filter(product=product, is_active=True)
         .select_related("variant_image")  
+        .prefetch_related("attributes")
         .order_by("price")
     )
 
@@ -159,12 +171,11 @@ def product_detail(request, slug):
             "variant_choices": [],
         })
 
-
+    # ✅ Construir choices con image_url
     variant_choices = []
     for v in variants:
         attrs = list(v.attributes.all())
         desc = ", ".join([f"{a.name}: {a.value}" for a in attrs]) if attrs else "Variante"
-
 
         image_url = ""
         if v.variant_image:
@@ -179,7 +190,7 @@ def product_detail(request, slug):
             "label": desc,
             "price": str(v.price),
             "stock": v.stock,
-            "image_url": image_url,  
+            "image_url": image_url,
             "color": {
                     "name": v.color.name,
                     "hex_code": v.color.hex_code
