@@ -237,8 +237,11 @@ def my_order_detail(request, order_id):
     })
 
 def money(amount):
+    if amount is None:
+        return "0.00"
     return f"{amount:.2f}"
 
+@login_required
 def receipt_pdf(request, order_id):
     # 1. Obtener la orden
     order = get_object_or_404(Order, id=order_id)
@@ -257,28 +260,26 @@ def receipt_pdf(request, order_id):
     # =====================================================
     logo_path = None
     
-    # Busca en carpetas static (Local)
+    # Intento 1: Buscador de estáticos (Local)
     found = finders.find('branding/logo.png')
     if found:
         logo_path = found
     
-    # Busca en STATIC_ROOT (Render/Producción)
+    # Intento 2: STATIC_ROOT (Render/Producción)
     if not logo_path and hasattr(settings, 'STATIC_ROOT') and settings.STATIC_ROOT:
         potential = os.path.join(settings.STATIC_ROOT, 'branding', 'logo.png')
         if os.path.exists(potential):
             logo_path = potential
 
-    # Fallback: Busca manual en la carpeta del proyecto
+    # Intento 3: Fallback manual
     if not logo_path:
         logo_path = os.path.join(settings.BASE_DIR, 'static', 'branding', 'logo.png')
 
-    # Dibujar
+    # Dibujar Logo
     if logo_path and os.path.exists(logo_path):
         try:
-            # Dibuja el logo
             p.drawImage(ImageReader(logo_path), margin, height - 3.5*cm, width=4*cm, preserveAspectRatio=True, mask='auto')
         except Exception as e:
-            # Si falla (ej: formato incorrecto), escribe texto
             p.setFont("Helvetica-Bold", 18)
             p.drawString(margin, height - 2.5*cm, "CONFECCIONES ISMAEL")
     else:
@@ -286,35 +287,40 @@ def receipt_pdf(request, order_id):
         p.drawString(margin, height - 2.5*cm, "CONFECCIONES ISMAEL")
 
     # =====================================================
-    # 4. ENCABEZADOS Y DATOS
+    # 4. ENCABEZADOS Y DATOS DEL CLIENTE
     # =====================================================
+    # Info de la empresa (Derecha)
     p.setFont("Helvetica", 10)
     p.drawRightString(width - margin, height - 2*cm, "RUC: 1234567890001")
     p.drawRightString(width - margin, height - 2.5*cm, "Av. Rocafuerte y Carlos Maria")
     p.drawRightString(width - margin, height - 3*cm, "Tel: 099 452 8554")
     p.drawRightString(width - margin, height - 3.5*cm, f"Fecha: {order.created_at.strftime('%d/%m/%Y')}")
 
+    # Título central
     p.setFont("Helvetica-Bold", 14)
     p.drawCentredString(width / 2, height - 5*cm, f"RECIBO DE ORDEN #{order.id}")
 
-    # Datos Cliente
+    # Datos del Cliente (Izquierda)
+    # CORRECCIÓN: Usamos los nombres reales de tu models.py (customer_name, etc.)
     y = height - 6.5*cm
     p.setFont("Helvetica-Bold", 10)
     p.drawString(margin, y, "Cliente:")
+    
     p.setFont("Helvetica", 10)
     
     # Nombre
-    cliente_nombre = f"{order.first_name} {order.last_name}"
-    p.drawString(margin + 2*cm, y, cliente_nombre)
+    c_name = order.customer_name if order.customer_name else "Cliente General"
+    p.drawString(margin + 2*cm, y, c_name)
     
-    # Dirección y Teléfono
+    # Dirección
     y -= 0.5*cm
-    direccion = order.address if order.address else "Retiro en tienda"
-    p.drawString(margin, y, f"Dirección: {direccion}")
+    c_address = order.customer_address if order.customer_address else "Retiro en tienda"
+    p.drawString(margin, y, f"Dirección: {c_address}")
     
+    # Teléfono
     y -= 0.5*cm
-    telefono = order.phone if order.phone else "N/A"
-    p.drawString(margin, y, f"Teléfono: {telefono}")
+    c_phone = order.customer_phone if order.customer_phone else "N/A"
+    p.drawString(margin, y, f"Teléfono: {c_phone}")
 
     # =====================================================
     # 5. TABLA DE PRODUCTOS
@@ -323,18 +329,19 @@ def receipt_pdf(request, order_id):
     
     data = [['Producto', 'Cant.', 'Precio', 'Total']]
     
+    # CORRECCIÓN: Usamos los campos de OrderItem (product_name, unit_price, line_total)
+    # Esto es más seguro porque son datos "congelados" al momento de la compra.
     for item in order.items.all():
-        desc = item.variant.product.name
-        # Agregar atributos (Talla M, Color Azul...)
-        attrs = [f"{a.name}: {a.value}" for a in item.variant.attributes.all()]
-        if attrs:
-            desc += f" ({', '.join(attrs)})"
+        # Descripción: Nombre + Detalles (Talla, Color)
+        desc = item.product_name
+        if item.variant_description:
+            desc += f" ({item.variant_description})"
             
         data.append([
             desc,
             str(item.quantity),
-            f"${money(item.price)}",
-            f"${money(item.get_total())}"
+            f"${money(item.unit_price)}",  # Campo correcto: unit_price
+            f"${money(item.line_total)}"   # Campo correcto: line_total
         ])
 
     col_widths = [10*cm, 2*cm, 2.5*cm, 2.5*cm]
@@ -356,12 +363,29 @@ def receipt_pdf(request, order_id):
     table.drawOn(p, margin, y - h_table)
 
     # =====================================================
-    # 6. TOTAL
+    # 6. TOTALES
     # =====================================================
     y_final = y - h_table - 1*cm
-    p.setFont("Helvetica-Bold", 12)
-    p.drawRightString(width - margin, y_final, f"TOTAL: ${money(order.total)}")
     
+    # Valores seguros (tu modelo tiene default=0, pero por seguridad usamos Decimal)
+    shipping = order.shipping_cost if order.shipping_cost else Decimal("0.00")
+    subtotal = order.subtotal if order.subtotal else Decimal("0.00")
+    total = order.total if order.total else Decimal("0.00")
+
+    p.setFont("Helvetica-Bold", 11)
+    p.drawRightString(width - margin, y_final, f"Subtotal: ${money(subtotal)}")
+    
+    y_final -= 0.5 * cm
+    p.drawRightString(width - margin, y_final, f"Envío: ${money(shipping)}")
+    
+    y_final -= 0.2 * cm
+    p.line(width - margin - 4*cm, y_final, width - margin, y_final) # Línea separadora
+    
+    y_final -= 0.5 * cm
+    p.setFont("Helvetica-Bold", 12)
+    p.drawRightString(width - margin, y_final, f"TOTAL: ${money(total)}")
+    
+    # Finalizar PDF
     p.showPage()
     p.save()
     return response
