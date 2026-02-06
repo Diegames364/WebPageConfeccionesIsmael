@@ -68,11 +68,23 @@ def product_list(request):
     # Precio mínimo para cards
     products = products.annotate(min_price=Min("variants__price"))
 
-    # Orden
-    if sort in ("price_asc", "price_desc"):
-        products = products.order_by("min_price" if sort == "price_asc" else "-min_price")
+    # =========================================================
+    # LÓGICA DE ORDENAMIENTO (Agrupando por Categoría)
+    # =========================================================
+    if sort == "newest":
+        # Primero agrupa por categoría, luego por los más nuevos
+        products = products.order_by("category__name", "-created_at")
+    elif sort == "name_asc":
+        products = products.order_by("category__name", "name")
+    elif sort == "name_desc":
+        products = products.order_by("category__name", "-name")
+    elif sort == "price_asc":
+        products = products.order_by("category__name", "min_price")
+    elif sort == "price_desc":
+        products = products.order_by("category__name", "-min_price")
     else:
-        products = products.order_by(SORT_MAP.get(sort, "-created_at"))
+        # Default fallback
+        products = products.order_by("category__name", "-created_at")
 
     # Stats precio
     price_stats = Variant.objects.filter(is_active=True, product__is_active=True).aggregate(
@@ -136,8 +148,7 @@ def product_detail(request, slug):
     variants = (
         Variant.objects
         .filter(product=product, is_active=True)
-        .select_related("variant_image")   # ✅ importante para imagen por variante
-        .prefetch_related("attributes")
+        .select_related("variant_image")  
         .order_by("price")
     )
 
@@ -148,13 +159,13 @@ def product_detail(request, slug):
             "variant_choices": [],
         })
 
-    # ✅ Construir choices con image_url
+
     variant_choices = []
     for v in variants:
         attrs = list(v.attributes.all())
         desc = ", ".join([f"{a.name}: {a.value}" for a in attrs]) if attrs else "Variante"
 
-        # Imagen de variante -> fallback a primera del producto -> vacío
+
         image_url = ""
         if v.variant_image:
             image_url = v.variant_image.image.url
@@ -168,7 +179,7 @@ def product_detail(request, slug):
             "label": desc,
             "price": str(v.price),
             "stock": v.stock,
-            "image_url": image_url,  # ✅ NUEVO
+            "image_url": image_url,  
             "color": {
                     "name": v.color.name,
                     "hex_code": v.color.hex_code
@@ -203,7 +214,6 @@ def product_detail(request, slug):
             messages.error(request, "Esta variante no tiene stock.")
             return redirect("catalog:detail", slug=slug)
 
-        # ✅ antes esto estaba después de un return y no se ejecutaba
         messages.success(request, "Producto agregado al carrito ✅")
         return redirect("catalog:detail", slug=slug)
 
