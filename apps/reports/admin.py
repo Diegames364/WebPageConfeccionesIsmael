@@ -68,7 +68,6 @@ class ReporteAdmin(admin.ModelAdmin):
                 'productos_labels': json.dumps(labels_productos),
                 'productos_data': json.dumps(data_productos),
             },
-            # Pasamos los últimos 10 pedidos para una tabla de detalle en el reporte impreso
             'ultimos_pedidos': ventas_rango.order_by('-created_at')[:10]
         }
 

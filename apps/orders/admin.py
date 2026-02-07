@@ -31,7 +31,6 @@ class OrderItemInline(admin.TabularInline):
         # Navegamos: Item -> Variante -> Color
         if obj.variant and obj.variant.color:
             color = obj.variant.color
-            # Creamos la bolita visual + el nombre
             dot = f'<span style="display:inline-block; width:12px; height:12px; background-color:{color.hex_code}; border:1px solid #ccc; border-radius:50%; margin-right:5px; vertical-align:middle;"></span>'
             return mark_safe(f"{dot}{color.name}")
         return "-"
@@ -60,7 +59,6 @@ class OrderAdmin(admin.ModelAdmin):
     
     ordering = ("-created_at",)
 
-    # CORREGIDO: Ahora usamos tus campos reales (customer_address y shipping_zone)
     fieldsets = (
         ("Información del Cliente", {
             "fields": ("user", "customer_name", "customer_email", "customer_phone")
