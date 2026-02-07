@@ -35,90 +35,111 @@ def product_list(request):
     attr_filters = {}
     for key, value in request.GET.items():
         if key.startswith("attr_") and value:
-            attr_name = key.replace("attr_", "")
-            attr_filters[attr_name] = value
+            attr_name = key.replace("attr_", "").strip().lower()
+            attr_filters[attr_name] = value.strip()
 
     products = Product.objects.filter(is_active=True)
 
     if q:
         products = products.filter(
-            Q(name__icontains=q) | Q(description__icontains=q)
+            Q(name__icontains=q) |
+            Q(description__icontains=q) |
+            Q(slug__icontains=q)
         )
 
+    variant_qs = Variant.objects.filter(is_active=True, product__in=products)
+
     if min_price is not None:
-        products = products.filter(variants__price__gte=min_price).distinct()
+        variant_qs = variant_qs.filter(price__gte=min_price)
     if max_price is not None:
-        products = products.filter(variants__price__lte=max_price).distinct()
-
+        variant_qs = variant_qs.filter(price__lte=max_price)
     if in_stock:
-        products = products.filter(variants__stock__gt=0).distinct()
+        variant_qs = variant_qs.filter(stock__gt=0)
 
-    # Filtros dinámicos (e.g. ?attr_Color=Rojo)
-    for attr_name, attr_val in attr_filters.items():
-        products = products.filter(
-            variants__attributes__name__iexact=attr_name,
-            variants__attributes__value__iexact=attr_val
-        ).distinct()
+    # AND de atributos
+    for aname, aval in attr_filters.items():
+        variant_qs = variant_qs.filter(
+            attributes__name__iexact=aname,
+            attributes__value__iexact=aval
+        )
 
-    # Ordenamiento
-    order_field = SORT_MAP.get(sort, "-created_at")
-    products = products.order_by(order_field)
+    products = products.filter(variants__in=variant_qs).distinct()
+
+    # Precio mínimo para cards
+    products = products.annotate(min_price=Min("variants__price"))
+
+    # =========================================================
+    # LÓGICA DE ORDENAMIENTO (CORREGIDA)
+    # =========================================================
+    if sort == "newest":
+        products = products.order_by("category__name", "-created_at")
+    elif sort == "name_asc":
+        products = products.order_by("category__name", "name")
+    elif sort == "name_desc":
+        products = products.order_by("category__name", "-name")
+    elif sort == "price_asc":
+        products = products.order_by("category__name", "min_price")
+    elif sort == "price_desc":
+        products = products.order_by("category__name", "-min_price")
+    else:
+        # Default fallback
+        products = products.order_by("category__name", "-created_at")
+
+    # Stats precio
+    price_stats = Variant.objects.filter(is_active=True, product__is_active=True).aggregate(
+        minp=Min("price"), maxp=Max("price")
+    )
+
+    # UI de atributos (con selected listo para template)
+    attr_names = (
+        VariantAttribute.objects
+        .filter(variant__is_active=True, variant__product__is_active=True)
+        .values_list("name", flat=True)
+        .distinct()
+        .order_by("name")
+    )
+
+    attr_ui = []
+    for name in attr_names:
+        slug = str(name).strip().lower()
+        key = f"attr_{slug}"
+        values = (
+            VariantAttribute.objects
+            .filter(
+                name__iexact=name,
+                variant__is_active=True,
+                variant__product__is_active=True
+            )
+            .values_list("value", flat=True)
+            .distinct()
+            .order_by("value")
+        )
+        attr_ui.append({
+            "label": name,
+            "key": key,
+            "values": list(values),
+            "selected": request.GET.get(key, ""),
+        })
 
     paginator = Paginator(products, 12)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
+    page_obj = paginator.get_page(request.GET.get("page"))
 
-    # ---------------------------------------------------------
-    # CORRECCIÓN DE FILTROS DUPLICADOS
-    # ---------------------------------------------------------
-    all_attrs = VariantAttribute.objects.filter(
-        variant__product__is_active=True,
-        variant__is_active=True
-    ).values('name', 'value').distinct()
-
-    attr_filters_sidebar = {}
-    for item in all_attrs:
-        raw_name = item['name']
-        if not raw_name:
-            continue
-            
-        # AQUÍ ESTÁ LA MAGIA: Limpiamos el nombre
-        # " Talla " -> "Talla", "talla" -> "Talla"
-        clean_name = raw_name.strip().capitalize()
-
-        if clean_name not in attr_filters_sidebar:
-            attr_filters_sidebar[clean_name] = []
-        
-        # Evitamos valores duplicados
-        if item['value'] not in attr_filters_sidebar[clean_name]:
-            attr_filters_sidebar[clean_name].append(item['value'])
-
-    # Rangos de precio para el slider
-    all_prices = Variant.objects.filter(product__is_active=True, is_active=True).aggregate(
-        min_p=Min('price'),
-        max_p=Max('price')
-    )
-    global_min = all_prices['min_p'] or 0
-    global_max = all_prices['max_p'] or 1000
-
-    # Mantener parámetros en la paginación
-    query_params = request.GET.copy()
-    if "page" in query_params:
-        del query_params["page"]
-    extra_params = query_params.urlencode()
+    params = request.GET.copy()
+    if 'page' in params:
+        del params['page']
+    extra_params = params.urlencode()
 
     return render(request, "catalog/list.html", {
         "page_obj": page_obj,
         "q": q,
-        "attr_filters_sidebar": attr_filters_sidebar, # Diccionario limpio
-        "global_min": global_min,
-        "global_max": global_max,
-        "current_min": min_price,
-        "current_max": max_price,
-        "current_sort": sort,
+        "min": request.GET.get("min", ""),
+        "max": request.GET.get("max", ""),
         "in_stock": in_stock,
-        "extra_params": extra_params,
-        "get_params": request.GET, 
+        "sort": sort,
+        "price_stats": price_stats,
+        "attr_ui": attr_ui,
+        "get_params": request.GET,
+        "extra_params": extra_params, 
     })
 
 
