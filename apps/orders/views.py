@@ -242,7 +242,7 @@ def money(amount):
 
 @login_required
 # ==============================================================================
-# FUNCIÓN FACTURA (receipt_pdf) - VERSIÓN FINAL CLOUDINARY
+# FUNCIÓN FACTURA (receipt_pdf)
 # ==============================================================================
 @login_required
 def receipt_pdf(request, order_id):
